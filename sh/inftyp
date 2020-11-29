@@ -1,0 +1,13 @@
+#!/bin/ksh
+
+cat <<'eof' > /tmp/pjs$$
+s,256,Char,
+s,257,Short,
+s,258,Integer,
+s,262,Serial,
+s,263,Date,
+s,266,Tad,
+eof
+sed -f /tmp/pjs$$
+rm /tmp/pjs$$
+

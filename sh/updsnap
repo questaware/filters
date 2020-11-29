@@ -1,0 +1,59 @@
+#!/bin/ksh
+
+ffile=
+diry=
+c_opt=
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-f" ; then
+   ffile=$2
+   shift 2
+ elif test "$1" = "-c" ; then
+   c_opt=1
+   shift 1
+ elif test "$1" = "-d" ; then
+   diry=$2
+   if test "$diry" = "" ; then
+     diry=.
+   else
+     shift 1
+   fi
+   shift 1
+ else
+   echo 'updsnap  {-c} { -f file | -d directory | } targetfile'
+   echo ' updates a file snapshot file'
+   echo ' either from a file or from the snapshot from a directory'
+   echo '   -c   -- compare dont update'
+   echo ' default is -d .'
+   exit 1;
+ fi
+
+done
+
+if test "$ffile$diry" = ""; then
+  diry=.
+fi
+
+tfile=${1:-DIRLIST}
+
+if ! test -r $tfile ; then
+  touch $tfile
+fi
+
+if test "$c_opt" ; then
+ if test "$diry" ; then
+  stree -q -L $diry | sort -k 4 | diff -b $tfile -
+ else
+  cat $ffile | sort -k 4 | diff -b $tfile -
+ fi
+else
+(if test "$diry" ; then
+  stree -q $oopts -L $diry | sort -k 4 | \
+  join -a 1 -a 2 -j 4 - $tfile | sed -e 's,\([^ ]*\) \([^ ]*\) \([^ ]*\) \([^ ]*\) \([^ ]*\).*,\2 \3 \4 \1	\5,' | untab -W 60
+ else
+  join -a 1 -a 2 -j 4 $ffile $tfile | sed -e 's,\([^ ]*\) \([^ ]*\) \([^ ]*\) \([^ ]*\) \([^ ]*\).*,\2 \3 \4 \1 \5,'
+ fi
+) > /tmp/updsnap.$$
+mv /tmp/updsnap.$$ $tfile
+fi

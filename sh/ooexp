@@ -1,0 +1,14 @@
+EXPLAIN PLAN SET STATEMENT_ID = 'dmup' FOR
+...
+
+
+select lpad(' ',2*level)||operation||' '||
+                          options||' '||
+                          object_name query_plan
+from plan_table
+where statement_id = 'dmup'
+connect by prior id = parent_id and statement_id = 'dmup'
+start with id = 1 and statement_id = 'dmup'
+order by id;
+
+rollback;

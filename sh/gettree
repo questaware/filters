@@ -1,0 +1,17 @@
+#!/bin/ksh
+
+#
+#			Uses parameter BuildLabel
+
+
+execroot=`whence $0`
+execroot=`dirname $execroot`
+
+
+dir=${1:-.}
+
+cd $dir
+
+BuildLabel=$BuildLabel $execroot/getall
+
+$execroot/stree -q -- -//.hhh +n//obsolete/ -p "BuildLabel=\"$BuildLabel\" $execroot/getall %s"

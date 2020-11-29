@@ -1,0 +1,99 @@
+#!/bin/ksh
+
+v_opt=
+root="."
+tarfile=pack.tar
+
+
+while expr "$1" : "-[a-zA-Z]" > /dev/null ; do
+
+ if   test "$1" = "-R" ; then
+   root=$2   
+   shift 2
+ elif test "$1" = "-v" ; then
+   v_opt=1
+   shift 1
+ else
+   echo 'packprom [ -v ] [ -R root ]'
+   echo ' -v      -- verbose'
+   echo ' -R root -- Root directory'
+   echo 'takes on stdin a list of records:'
+   echo '=N directory'
+   echo '       followed by a list of simple file names'
+   echo '=O directory'
+   echo '       followed by a list of simple file names'
+   echo '=Y directory'
+   echo '       followed by a list of simple file names'
+   echo ' where 1): directory must be one of: scripts, opins, exe, lib.'
+   echo '       2): the N,O,Y refer to YM12,YM14,YM17 jobs respectively'
+
+   exit 1;
+ fi
+
+done
+
+rm -f /tmp/packprom.$$
+
+atf=$tarfile
+
+if ! expr "$atf" : "/.*" >/dev/null; then
+  atf=`pwd`/$atf
+fi
+
+cd $root
+
+tar -cvf $atf ` \
+sed -e 's,^[^A-Za-z/=],? &/,;s,^=N,N ,;s,^=O,O ,;s,^=Y,Y ,;s,^.[^ ],= &,' | \
+while read TYPE LINE; do
+
+  if test "$TYPE" = "=" ; then
+    if test $PVCS ; then
+      (cd /ym/appl/pvcs/$PVCS; get -P $LINE 2>/dev/null) | diff - $LINE >/dev/null
+      if test $? -ne 0 ; then
+        echo DIFFERENT TO PVCS: $LINE 1>&2
+	err=y
+      elif test $v_opt ; then
+        echo GOOD IN PVCS: $LINE 1>&2
+      fi
+    fi
+    echo $LINE
+  else
+    PVCS=
+
+    if test "$TYPE" = "N" ; then
+      case $LINE in
+        "scripts") PVCS=shell ;;
+        "opins") PVCS=opins ;;
+        "exe") ;;
+	"lib") ;;
+	*) PVCS=ILLEGAL
+      esac
+    else
+      case $LINE in
+        "scripts") PVCS=phase3.2/livescripts/scripts ;;
+        "opins")   PVCS=phase3.2/opins ;;
+        "exe") ;;
+	"lib") ;;
+	*) PVCS=ILLEGAL
+      esac
+    fi
+
+    echo $TYPE $LINE >> /tmp/packprom.$$
+  fi
+
+done
+
+if test "$err" != "" ; then
+  rm -f $atf 2> /dev/null
+  kill -15 $$
+fi
+
+echo /tmp/packprom.$$ 
+`
+
+if test $? -ne 0; then
+  echo "NOT ALL FILES FOUND ($?)"
+  rm $atf
+fi
+
+rm -f /tmp/packprom.$$

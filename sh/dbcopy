@@ -1,0 +1,46 @@
+#!/bin/ksh
+
+dbspace=
+
+if expr "$1" : "-d" > /dev/null ; then
+ dbspace="-d " $2
+ shift shift
+fi
+
+if [[ $# -lt 2 ]] ; then
+  echo 'Usage: dbcopy {-d dbspace} src tgt'
+  return 0
+fi
+
+src=$1
+tgt=$2
+
+
+pid=$$
+
+mkdir /tmp/pjsdcq$pid
+cd    /tmp/pjsdcq$pid
+
+if dbexport $src ; then
+  echo "Database $src exported"
+else
+  echo "Error exporting database $src"
+  rm -rf /tmp/pjsdcq$pid
+  return 2
+fi
+
+mv ${src}.exp ${tgt}.exp
+sed -e "1s,DATABASE ${src},DATABASE ${tgt}," ${tgt}.exp/${src}.sql > ${tgt}.exp/${tgt}.sql
+rm -f ${tgt}.exp/${src}.sql
+
+cd ${tgt}.exp
+
+if dbimport ${tgt} -l buffered $dbspace; then
+  echo "Database $tgt created"
+else
+  echo "Error creating Database $tgt"
+  rm -rf /tmp/pjsdcq$pid
+  return 1
+fi
+rm -rf /tmp/pjsdcq$pid
+

@@ -1,0 +1,45 @@
+#!/bin/ksh
+
+
+atdb=
+user=misapp/password
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-a" ; then
+   atdb="@cobra"
+   shift 1
+ else
+   echo 'orash file'
+   exit;
+ fi
+
+done
+
+
+table=$1
+if test "$table" = "" ; then
+  exit
+fi
+
+table=`echo $table | tr "[a-z]" "[A-Z]"`
+
+cat <<EOF | sqlplus -s $user
+
+set linesize 1000;
+set pagesize 10000;
+
+break on index_name skip 1;
+
+select i.uniqueness, ic.index_name, ic.column_name 
+from all_ind_columns$atdb  ic, all_indexes$atdb  i
+where i.table_owner = ic.table_owner
+ and  i.table_name = ic.table_name
+ and  i.owner = ic.index_owner
+ and  i.index_name = ic.index_name
+ and  ic.table_name = '$table' 
+order by ic.index_owner, ic.table_owner, index_name, ic.column_position;
+
+EOF

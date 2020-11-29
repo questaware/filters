@@ -1,0 +1,38 @@
+#!/bin/ksh
+
+
+#
+
+if test "X$ORA_SCHEMA" = "X"; then
+ #ORA_SCHEMA=misapp/password
+ ORA_SCHEMA=/
+fi
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-u" ; then
+   ORA_SCHEMA=$2
+   shift 2
+ else
+   echo 'orash file'
+   break;
+ fi
+
+done
+
+file=$1
+if test "$file" = "" ; then
+ cat > /tmp/oosh$$
+ file=/tmp/oosh$$
+fi
+
+cat $file <<EOS | sqlplus -s $ORA_SCHEMA
+;
+/
+EOS
+
+if test "$1" = "" ; then
+ rm $file
+fi

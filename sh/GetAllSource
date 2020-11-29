@@ -1,0 +1,114 @@
+# *********************************************************************
+#
+# Program : GetAllSource
+#
+# Description : Gets out all the latest source for a particular build. 
+#
+# Author : David Pankhurst
+#
+# Date : 16-June-1999
+#
+# *********************************************************************
+
+#####################################
+# Set up some environment variables
+#####################################
+SCRIPT_HOME=$COBRA_HOME/appl/buildbin
+
+execroot=`whence $0`
+execroot=`dirname $execroot`
+
+b_opt=
+n_opt=
+opts=
+
+while expr "$1" : "-[a-z]*" > /dev/null ; do
+  if   test "$1" = "-B" ; then
+    b_opt=$2
+    shift 1
+  elif test "$1" = "-n" ; then
+    n_opt=-n
+  else
+    opts="$opts $1"
+  fi
+  shift 1
+done
+
+#####################################################################
+# Find the release, and set all the associated environment variables#
+#####################################################################
+
+bl=$BuildLabel
+
+if test "$b_opt" == "" ; then
+. SelectRelease
+else
+. SelectRelease <<EOF
+$b_opt
+EOF
+fi
+
+if [ -z "$AllDirs" ]
+then
+   print -n "The SelectRelease script is incorrect. The AllDirs environment "
+   print    "variable has not been set"
+   exit 1
+fi
+
+if test -n "$bl" ; then
+  BuildLabel=$bl
+fi
+
+if [ -z "$BuildLabel" ]
+then
+   print -n "The SelectRelease script is incorrect. The BuildLabel environment "
+   print    "variable has not been set"
+   exit 1
+fi
+
+DirList=$SCRIPT_HOME/$AllDirs
+
+#################################
+# Check the directory list exists
+#################################
+if [ ! -f $DirList ]
+then
+   print "The directory list : $DirList does not exist."
+   exit 1
+else
+   print "\nUsing $DirList as the list of all directories for the release\n"
+fi
+
+
+########################
+#	Get files by label
+# 	Refresh include files
+########################
+
+HERE=$PWD
+
+for DIR in ` grep -v '#' $DirList `  
+do
+(
+   print "In dir $DIR"
+   cd $HERE/$DIR
+#   get -#4 -v"$BuildLabel" *.h_v
+#   get -#4 -v"$BuildLabel" *.ccv
+#   get -#4 -v"$BuildLabel" *.cpv
+#   get -#4 -v"$BuildLabel" *.__v
+#   get -#4 -v"$BuildLabel" *.c_v
+#   get -#4 -v"$BuildLabel" *.mav
+#   get -#4 -v"$BuildLabel" *.pcv
+#############################################################
+# I commented out the above lines are they were too specific
+# Because of Versant and other changes to the code the
+# filenames do not always fit into the above list e.g.
+# Makefile.odbctest
+# I think the above lines can be changed to 'get *.??v*'
+# Siobhan, 17 May 2000
+############################################################# 
+   get -#4 -v"$BuildLabel" *.??v*
+   refresh_local
+)
+done
+

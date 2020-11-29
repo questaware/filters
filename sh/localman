@@ -1,0 +1,4 @@
+#!/bin/ksh
+
+MANPATH=$MANPATH:$(echo $1 | sed -e 's,man[0-9]/.*,,') man $(basename $1)
+

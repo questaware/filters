@@ -1,0 +1,42 @@
+#!/bin/ksh
+
+#
+
+if test "$ORACLE_HOME" = "" ; then
+  export ORACLE_HOME=/opt/oracle/8.1.6
+fi
+
+if test "X$ORA_SCHEMA" = "X"; then
+ ORA_SCHEMA=misapp/password
+ #ORA_SCHEMA=/
+fi
+rb=rollback
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-u" ; then
+   ORA_SCHEMA=$2
+   shift 2
+ elif test "$1" = "-c" ; then
+   rb=
+   shift 1
+ else
+   echo 'ooe [-u user] [-c]'
+   echo '-c  -- commit'
+   return 1
+ fi
+
+done
+
+cat <<EOF | sqlplus -s $ORA_SCHEMA
+
+set linesize 10000;
+set pagesize 10000;
+set long 5000;
+
+$*;
+$rb;
+
+EOF

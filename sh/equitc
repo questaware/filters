@@ -1,0 +1,10 @@
+#!/bin/ksh
+
+rm -f /tmp/pjs$$
+
+for i in $1/* ; do
+  equitj $i $2/$(basename $i) >> /tmp/pjs$$
+done
+
+cat /tmp/pjs$$
+rm /tmp/pjs$$

@@ -1,0 +1,59 @@
+#!/bin/ksh +x
+
+#
+
+dir=
+tgt=smpl33
+n_opt=
+p_opt=
+user=$LOGNAME
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-t" ; then
+   tgt=$2
+   shift 2
+ elif test "$1" = "-d" ; then
+   dir=$2
+   shift 2
+ elif test "$1" = "-p" ; then
+   p_opt=$2
+   shift 2
+ elif test "$1" = "-u" ; then
+   user=$2
+   n_opt=-n
+   shift 2
+ elif test "$1" = "-n" ; then
+   n_opt=-n
+   shift 1
+ else
+   echo 'ftpg {-t targetmachine} {-u targetuser} {-n} {-d diry} file*'
+   echo ' -t machine   -- Machine to talk to'
+   echo ' -u user      -- Login account to use'
+   echo ' -n           -- Delay login'
+   echo ' -d directory -- remote directory'
+   echo 'No files: get all files'
+   exit;
+ fi
+
+done
+
+(if test "X$n_opt" != "X" ; then
+   echo user $user $p_opt
+ fi
+
+ echo bin
+
+ if test "$dir" != ""; then
+   echo cd $dir
+ fi
+
+ if test "X$*" = "X"; then
+   echo mget \*
+ else
+   for fn in $*; do
+     echo get $fn
+   done
+ fi
+) | \
+ftp -i $n_opt $tgt

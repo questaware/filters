@@ -1,0 +1,185 @@
+#!/bin/ksh
+
+fonly=
+owner='RANDREWS'
+blksz=8
+atdb=
+
+
+
+if test "X$ORA_SCHEMA" = "X"; then
+ #ORA_SCHEMA=misapp/password
+ ORA_SCHEMA=/
+fi
+
+if test "$ORACLE_HOME" = "" ; then
+  ORACLE_HOME=/opt/oracle/8.1.6.3
+fi
+
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-f" ; then
+   shift 1
+   fonly=1
+ elif test "$1" = "-o" ; then
+   owner=$2
+   shift 2
+ elif test "$1" = "-a" ; then
+   atdb="@cobra"
+   test "$owner" = "YMODAPP" && owner='YM01'
+   shift 1
+ elif test "$1" = "-b" ; then
+   blksz=$2
+   shift 2
+ elif test "$1" = "-u" ; then
+   ORA_SCHEMA=$2
+   shift 2
+ else
+   echo 'oot {-q} {-f} {-o owner} {-b blksz} file'
+   echo ' -f -- fields only'
+   exit 1;
+ fi
+
+done
+
+table=$1
+if test "$table" != "" ; then
+					# Table specified
+
+ table=`echo $table | tr "[a-z]" "[A-Z]"`
+
+cat <<EOF | sqlplus -s $ORA_SCHEMA | sed -e '/^$/d'
+
+set linesize 1000;
+set pagesize 10000;
+
+column column_name fold_before
+
+break on table_name skip 1;
+
+select substr(tc.table_name || '   ' || nvl(at.tablespace_name,'?') ||
+  '('||nvl(at.blocks,-1)*$blksz ||')'  ||'('||nvl(at.num_rows,-1)||')'
+				       ||'('||nvl(at.avg_space,-1)||')'
+					, 0, 52) table_name,
+       substr('   '||tc.column_id||' '|| tc.column_name, 0, 24) column_name, 
+       substr(decode(tc.data_type,'VARCHAR2','VCHAR2',tc.data_type), 0,6) type,
+       tc.data_length,
+       ai.index_name||decode(nvl(ai.uniqueness, ' '), 'UNIQUE', '  U', 'NONUNIQUE', ' NU', '') k
+from all_tab_columns$atdb tc, all_ind_columns$atdb ic, 
+     all_indexes$atdb ai, all_tables$atdb at
+where tc.owner = ic.table_owner(+)
+ and  tc.table_name = ic.table_name(+)
+ and  tc.column_name = ic.column_name(+)
+ and  ic.table_owner = ai.table_owner(+)
+ and  ic.table_name = ai.table_name(+)
+ and  ic.index_owner = ai.owner(+)
+ and  ic.index_name = ai.index_name(+)
+ and  at.owner(+) = tc.owner
+ and  at.table_name(+) = tc.table_name
+ and (tc.owner='$owner'
+  or  tc.owner='SYS')
+ and  tc.table_name='$table'
+order by table_name, tc.column_id;
+
+EOF
+
+if test "$fonly" = "" ; then
+ 
+cat <<EOF | sqlplus -s $ORA_SCHEMA
+
+set linesize 1000;
+set pagesize 10000;
+
+break on table_index skip 1;
+
+select substr(ic.table_name||'..'||ic.index_name, 0, 40) table_index,
+       decode(ix.uniqueness, 'UNIQUE', 'UQ', 'NONUNIQUE', 'NU') uq,
+       substr(ic.column_name, 0, 26) column_name
+from all_ind_columns$atdb ic, all_indexes$atdb ix
+where ix.table_owner = ic.table_owner
+ and  ix.table_name  = ic.table_name
+ and  ix.owner       = ic.index_owner
+ and  ix.index_name  = ic.index_name
+ and  ic.index_owner = '$owner'
+ and  ic.table_name = '$table'
+order by table_index, ic.index_owner, ic.table_owner, ic.column_position;
+
+EOF
+fi
+
+else
+					# Table not specified
+
+cat <<EOF | sqlplus -s $ORA_SCHEMA | sed -e '/^$/d'
+
+set linesize 1000;
+set pagesize 10000;
+
+column table_name fold_before
+column cid format 999999 fold_before
+
+break on table_name skip 1;
+
+select table_name, cid, column_name, type, 
+       decode(sum(k), 1,' N', 2,' N', 3,' N', 4,' U', 5,'nU', 6,'nU', 7,'nU', '') k
+from
+(select 
+       substr(tc.table_name||' '||
+              decode(ao.object_type, 'TABLE', ' ', lower(ao.object_type))||'  '||
+              substr(nvl(at.tablespace_name,'?'),6,5) ||
+     '('||nvl(at.blocks,-1)*$blksz||')', 0, 48) table_name, 
+       tc.column_id cid,
+       substr(tc.column_name, 0, 24) column_name, 
+       substr(decode(tc.data_type,'VARCHAR2','VCHAR2',tc.data_type), 0,6) type,
+       decode(nvl(ai.uniqueness, ' '), 'NONUNIQUE', 1, 'UNIQUE', 4, 0) k
+from all_tab_columns$atdb tc, all_ind_columns$atdb ic, 
+     all_indexes$atdb     ai, all_tables$atdb      at, all_objects$atdb ao
+where 
+      tc.owner='$owner' and
+      ic.table_owner(+) = tc.owner
+ and  ic.table_name(+)  = tc.table_name
+ and  ic.column_name(+) = tc.column_name
+ and  ai.table_owner(+) = ic.table_owner
+ and  ai.table_name(+)  = ic.table_name
+ and  ai.owner(+)       = ic.index_owner
+ and  ai.index_name(+)  = ic.index_name
+ and  at.owner(+)      = tc.owner
+ and  at.table_name(+) = tc.table_name
+ and  ao.owner(+)      = tc.owner
+ and  ao.object_name(+) = tc.table_name
+)
+group by table_name, cid, column_name, type
+order by table_name, cid;
+
+EOF
+
+if test "$fonly" = "" ; then
+ 
+cat <<EOF | sqlplus -s $ORA_SCHEMA | sed -e '/^$/d'
+
+set linesize 1000;
+set pagesize 10000;
+
+column uq fold_before
+
+break on table_index skip 1;
+
+select substr(ic.table_name||'..'||ic.index_name, 0, 40)||'-'||ix.tablespace_name table_index,
+       '     '||decode(ix.uniqueness, 'UNIQUE', 'UQ', 'NONUNIQUE', 'NU') uq,
+       substr(ic.column_name, 0, 26) column_name
+from all_ind_columns$atdb ic, all_indexes$atdb ix
+where ix.table_owner = ic.table_owner
+ and  ix.table_name  = ic.table_name
+ and  ix.owner       = ic.index_owner
+ and  ix.index_name  = ic.index_name
+ and  ic.index_owner = '$owner'
+order by table_index, ic.index_owner, ic.table_owner, ic.column_position;
+
+EOF
+
+fi
+fi
+

@@ -1,0 +1,25 @@
+#!/bin/ksh
+
+while expr "$1" : "-[q]" > /dev/null ; do
+
+ if test "$1" = "-q" ; then
+   shift 1
+ else
+   echo 'oolp'
+   break;
+ fi
+
+done
+
+
+cat <<EOF | sqlplus -s /
+
+set linesize 1000;
+set pagesize 10000;
+
+
+select unique name
+from all_source
+order by name;
+
+EOF

@@ -1,0 +1,24 @@
+#!/bin/ksh
+
+
+user=ymtest_uat23/ymtest_uat23
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if test "$1" = "-q" ; then
+   shift 1
+ else
+   echo 'oodate number'
+   break;
+ fi
+
+done
+
+cat <<EOF | sqlplus -s $user
+
+set linesize 1000;
+set pagesize 10000;
+
+select to_date('31-DEC-1899', 'DD-MON-YYYY') + $1 result from dual;
+
+EOF

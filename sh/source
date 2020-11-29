@@ -1,0 +1,3 @@
+
+~peter/bin/stree +n//.ec.txt +n//.h.txt +n//.c.txt +n//.o -s -150000 +n//.bak -q $*
+

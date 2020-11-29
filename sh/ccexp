@@ -1,0 +1,34 @@
+#!/bin/ksh
+
+execroot=`whence $0`
+execroot=`dirname ${execroot}`
+
+MAKEFILE=Makefile
+
+if [ X$1 = "X-f" ] ; then
+  MAKEFILE=$2
+  shift
+  shift
+else
+  if [ ! -r $MAKEFILE ] ; then
+    MAKEFILE=makefile
+  fi 
+fi
+
+if [ X$1 == X ] ; then
+  echo ccexp {-f makefile} target
+  return 1
+fi
+
+tgt=${1%%.c}
+
+sed -e 's/ -c / -E /' $MAKEFILE > /tmp/pjsmake
+
+if test -f ${tgt}.o ; then
+  mv -f ${tgt}.o ${tgt}.oo
+fi
+make -f ~/tmp/pjsmake ${tgt}.o
+if test -f ${tgt}.oo ; then
+  mv -f ${tgt}.oo ${tgt}.o
+fi
+

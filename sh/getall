@@ -1,0 +1,50 @@
+#!/bin/ksh
+
+#
+#			Uses parameter BuildLabel
+
+
+if expr "$PWD" : "/ym/appl/pvcs" > /dev/null ; then
+  echo You cant do this in /ym/appl/pvcs
+  exit 1
+fi
+
+bl="${BuildLabel}"
+if expr "$bl" : "^[^ 	][^ 	]*$" ; then
+  bl="-v$bl"
+elif test -n "$bl"; then
+  bl="-v\"$bl\""
+fi
+
+d=${1:-.}
+
+if ! test -r "$d/vcs.cfg" ; then
+  echo "NO PVCS in: $d"
+else
+ src=`sed -e 's,VCSDir=,,p;d' $d/vcs.cfg`
+ bn=`basename $src`
+ dn=`basename $d`
+ if   test "$d" != "." -a "$bn" != "$dn" ; then
+   echo PVCS dir mismatch: $d src: $src
+   echo src: $src
+ elif   test "$src" = "" ; then
+   echo NO VCSDIR in $d/vcs.cfg
+ elif test "$src/*" = "$src/vcs.cfg" ; then
+   echo NO FILES
+ else
+   cd $d
+   files=
+   for i in $src/?* ; do
+     if ! test -d $i -o "$i" = "$src/vcs.cfg" ; then
+       files="$files $i"
+     fi
+   done
+   if test "$files" != ""; then
+     echo D: $d
+     echo SRC: $src
+     echo FILES: $files
+     get $bl $files
+   fi
+ fi
+fi
+

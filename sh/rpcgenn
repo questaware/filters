@@ -1,0 +1,12 @@
+#!/bin/ksh
+
+# Make rpcgen output in the current directory 
+
+fn=$1
+bfn=`basename $fn`
+shift
+ln $fn .
+rpcgen -C -DRPCGEN $bfn
+if [[ $fn != $bfn ]] ; then 
+  rm $bfn
+fi

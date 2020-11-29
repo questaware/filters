@@ -1,0 +1,343 @@
+2 handle-tab
+
+set $discmd FALSE
+set $sscroll TRUE
+set $cmtcolour 1
+set $col1ch 0
+set $col2ch 8
+set $palette ".31.32.33.34.35.36.37...."
+
+
+;set $pagelen 58
+
+bind-to-key search-incls M-FNP
+
+set $sterm ~n
+
+add-global-mode re
+add-global-mode abc
+add-global-mode grey
+add-global-mode black
+add-mode grey
+add-mode BLACK
+
+
+bind-to-key next-word ^P
+bind-to-key end-of-line ^Q
+bind-to-key previous-page FN^O
+bind-to-key next-page ^Y
+bind-to-key next-page FN^Y
+bind-to-key beginning-of-file M-FN^O
+bind-to-key end-of-file M-FN^Y
+
+bind-to-key delete-next-character 
+
+bind-to-key quote-character A-2
+ 
+1 store-macro		; change case one character
+  set %ccc $curchar
+  !if &gre %ccc 96 
+    set $curchar &sub %ccc 32
+  !else
+    !if &and &gre %ccc 64 &les %ccc 91
+        set $curchar &add %ccc 32
+      !endif
+    !endif
+  !endif
+  forward-character
+!endm    
+
+bind-to-key execute-macro-1 
+
+2 store-macro		; quit buffer
+  set %disc $discmd
+  set $discmd FALSE
+  set %mybuf $cbufname
+  set $status 0
+  !if &not %goon
+    !force last-buffer
+  !endif
+  !if &not $status
+    !force next-buffer
+  !endif
+  !if &not $status
+    !force exit-emacs
+  !endif
+  !force delete-buffer %mybuf
+  !if &not $status
+    !force select-buffer %mybuf
+  !endif
+  !force delete-window
+  set $discmd %disc
+!endm
+
+bind-to-key execute-macro-2 M-\
+bind-to-key execute-macro-2 M-`
+
+3 store-macro		; save, quit buffer
+  save-file
+  execute-macro-2
+!endm
+
+bind-to-key execute-macro-3 M-/
+
+4 store-macro		; new file
+  set %fle @&cat &cat "new file [" $cfname "]: "
+  !if &equ 0 &length %fle
+     read-file $cfname
+  !else
+     set %bnm $cbufname
+     find-file %fle
+     !if &not &seq %bnm $cbufname
+       delete-buffer %bnm
+     !endif
+  !endif
+!endm
+
+bind-to-key execute-macro-4 ^X
+
+5 store-macro		; Search in the last direction
+  !if &or &gre $lastdir -1 &gre 2 $curline
+    hunt-forward
+  !else
+    hunt-backward
+  !endif  
+!endm  
+
+bind-to-key execute-macro-5 FN1
+bind-to-key execute-macro-5 ^N
+
+6 store-macro		; toggle msb one character
+  set %ool $lastkey
+  !if &equ $lastkey 17
+    set %ccc &sub &sub $pagelen $cwline 2
+    set $curline &add $curline %ccc  
+  !else
+  !if &equ $lastkey 57
+    search-forward [A-Za-z-_][A-Za-z-_0-9]*
+    forward-character
+    search-forward $match
+  !else
+;   set %sv @&cat &cat "(" $lastkey ")"
+    set $curchar &bxor $curchar 128
+    forward-character
+  !endif
+  !endif
+!endm    
+
+bind-to-key execute-macro-6 ^^
+bind-to-key execute-macro-6 M-^Q
+
+7 store-macro  		; toggle insert/overstrike
+  set $cmode &bxor $cmode 32
+!endm
+
+bind-to-key execute-macro-7 FN4
+
+8 store-macro		; copy previous line 
+  set %ca &dit
+  insert-string %ca
+!endm  
+
+bind-to-key execute-macro-8 FN^C
+bind-to-key execute-macro-8 ^\
+
+9 store-macro		; copy line
+  beginning-of-line
+  set-mark
+  next-line
+  copy-region
+  set $discmd FALSE
+  remove-mark
+  set $discmd TRUE
+!endm
+
+bind-to-key execute-macro-9 ^C 
+
+10 store-macro 		; do line
+  next-line
+  execute-macro
+  !if &gre $cwline 20
+    3 move-window-down
+  !endif
+!endm
+
+bind-to-key execute-macro-10 FN2
+
+11 store-macro		; kill line
+  beginning-of-line
+  1 kill-to-end-of-line 
+!endm
+
+bind-to-key execute-macro-11 ^D
+
+12 store-macro		; edit file
+  search-forward "[a-zA-Z0-9_./$]*"
+  find-file &dir $cfname $match
+!endm
+
+bind-to-key execute-macro-12 M-FN3
+
+13 store-macro         ; expand macros
+  !if &equ $uarg 0
+    execute-file xmacs.rc
+  !else
+    execute-file diffs.rc
+  !endif  
+!endm
+
+bind-to-key execute-macro-13 M-I
+
+14 store-macro	 	; yank, clear kill buffer
+  yank
+  kill-kill
+!endm
+
+bind-to-key execute-macro-14 FNC
+bind-to-key yank M-FNC
+
+15 store-macro
+  kill-kill
+  set-mark
+  end-of-line
+  copy-region
+  beginning-of-line
+  set %cmd &cat &cat &cat &cat "diff -b " %otherdrv $kill " " $kill
+  pipe-command %cmd
+!endm
+
+bind-to-key execute-macro-15 FN5
+
+16 store-macro		; bol or bof
+  !if &equ $keycount 1
+   beginning-of-line
+  !else
+   beginning-of-file
+  !endif
+!endm
+
+bind-to-key execute-macro-16 FN<
+
+17 store-macro		; bol or bof
+  !if &equ $keycount 1
+   end-of-line
+  !else
+   end-of-file
+  !endif
+!endm
+
+bind-to-key execute-macro-17 FN>
+
+18 store-macro
+   insert-string "{ "
+   newline-and-indent
+   insert-string "}"
+   previous-line
+   end-of-line
+!endm
+
+bind-to-key execute-macro-18 M-^]
+
+19 store-macro		; delete to bol
+  set $discmd FALSE
+  set-mark
+  beginning-of-line
+  kill-region
+  remove-mark
+  set $discmd TRUE
+!endm
+
+bind-to-key beginning-of-file M-FNZ
+bind-to-key end-of-file M-FNV
+
+bind-to-key beginning-of-line FN9
+bind-to-key previous-word FN0
+bind-to-key next-word FN:
+bind-to-key end-of-line FN;
+
+bind-to-key execute-macro-19 FN^9
+bind-to-key delete-previous-word FN^0
+bind-to-key delete-next-word FN^:
+bind-to-key kill-to-end-of-line FN^;
+
+bind-to-key kill-region M-^P
+
+bind-to-key forward-character ^L
+
+bind-to-key clear-and-redraw M-^[
+
+20 store-macro	; 
+;   set %oo @&cat "key " $lastkey
+   !if &equ $lastkey 54
+     search-reverse "^{"
+   !else
+     ;set $discmd 0
+     !if &equ $lastkey 48
+       set-mark
+       next-word
+       copy-region
+     !else
+     !if &gre $keycount 1
+       set $lastdir 1
+       !if &equ $lastkey 145
+         set $lastdir -1
+       !endif
+       execute-macro-5
+     !else
+       search-forward [A-Za-z0-9_][A-Za-z0-9_]*
+       !if &equ $lastkey 145
+         search-reverse $match
+       !else
+         forward-character
+         !force search-forward $match
+         !if &not $status
+           backward-character
+           abort-command
+         !endif
+       !endif
+       !endif
+     !endif
+     !endif
+     ;set $discmd 1
+   !endif
+!endm
+
+bind-to-key execute-macro-20 FN^P
+bind-to-key execute-macro-20 FN^N
+bind-to-key execute-macro-20 FN6
+bind-to-key execute-macro-20 A-0
+
+
+bind-to-key execute-macro-20 ^XB
+bind-to-key next-buffer M-FNF
+bind-to-key last-buffer M-FNB
+bind-to-key next-window M-FNN
+
+
+bind-to-key execute-macro ^W
+
+bind-to-key search-forward ^S
+bind-to-key search-reverse M-S
+bind-to-key query-replace-string 
+bind-to-key replace-string M-R
+
+bind-to-key kill-region ^XD
+bind-to-key kill-region FN^D
+bind-to-key copy-region ^XC
+bind-to-key kill-kill ^G
+bind-to-key kill-kill ^F
+
+bind-to-key shell-command ^X!
+bind-to-key i-shell ^X%
+bind-to-key pipe-command ^X<
+bind-to-key filter-buffer ^X\
+bind-to-key filter-buffer ^X|
+
+bind-to-key newline-and-indent ^M
+
+bind-to-key goto-matching-fence 
+
+set $discmd TRUE
+
+set %istrl 64
+

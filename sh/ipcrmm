@@ -1,0 +1,39 @@
+#!/bin/ksh
+#
+alias true=1
+
+integer dont_opt=
+pid=0
+pat=
+myline=
+sig=
+
+if [[ $# -eq 0 ]] ; then
+  echo ipcrmm {-n} pat
+  return
+fi
+
+while [[ $# -gt 0 ]] ; do
+  if   expr "$1" : "-n.*" > /dev/null ; then
+	 dont_opt=1
+#   echo OPT1
+  else
+    pat=$1
+#   echo OPT2
+  fi
+  shift
+done
+#echo DONT_OPT $dont_opt PS_OPTS $ps_opts PAT $pat
+ipcs | grep $pat | while read myline ; do
+  typ=$( expr "$myline" : "\(.\)" )
+  id=$( expr "$myline" : ". *\([0-9]*\)" )
+  echo $myline
+  if [[ dont_opt -eq 0 ]] ; then
+	 echo y/n
+	 ans=$( line </dev/tty )
+	 if [[ ( "X$ans" = "Xy" ) || ( X$ans = Xy ) ]] ; then 
+		ipcrm -$typ $id 
+	 fi
+  fi
+done
+

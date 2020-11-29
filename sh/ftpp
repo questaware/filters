@@ -1,0 +1,54 @@
+#!/bin/ksh
+
+#
+
+dir=
+tgt=spml33
+n_opt=
+user=$LOGNAME
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-t" ; then
+   tgt=$2
+   shift 2
+ elif test "$1" = "-d" ; then
+   dir=$2
+   shift 2
+ elif test "$1" = "-u" ; then
+   user=$2
+   n_opt=-n
+   shift 2
+ elif test "$1" = "-n" ; then
+   n_opt=-n
+   shift 1
+ else
+   echo 'ftpp {-t targetmachine} {-u targetuser} {-n} {-d diry} file*'
+   echo ' -t machine   -- Machine to talk to'
+   echo ' -u user      -- Login account to use'
+   echo ' -n           -- Delay login'
+   echo ' -d directory -- remote directory'
+   exit;
+ fi
+
+done
+
+
+
+
+
+(if test "$n_opt" != "" ; then
+   echo user $user
+ fi
+
+ echo bin
+
+ if test "$dir" != ""; then
+   echo cd $dir
+ fi
+
+ for fn in $*; do
+   echo put $fn
+ done
+) | \
+ftp $n_opt $tgt

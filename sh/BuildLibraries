@@ -1,0 +1,157 @@
+#!/usr/bin/ksh
+
+# *********************************************************************
+#
+# Program : BuildLibraries
+#
+# Description : Builds all the libraries for a particular release.
+#               The environment variable UT_VERSION_LABEL MUST be set 
+#               before running this script
+#               24-11-99 RIB added 'all' to dmk_no_get $USE_ENVIRON all
+#
+# Author : David Pankhurst
+#
+# Date : 16-June-1999
+#
+# *********************************************************************
+
+
+execroot=`whence $0`
+execroot=`dirname $execroot`
+
+b_opt=
+n_opt=
+opts=
+
+while expr "$1" : "-[a-z]*" > /dev/null ; do
+  if   test "$1" = "-B" ; then
+    b_opt=$2
+    shift 1
+  elif test "$1" = "-n" ; then
+    n_opt=-n
+  else
+    opts="$opts $1"
+  fi
+  shift 1
+done
+
+#####################################
+# Set up some environment variables
+#####################################
+BUILD_HOME=$PWD
+CODE_HOME=$BUILD_HOME/code
+SCRIPT_HOME=$COBRA_HOME/appl/buildbin
+
+if test "$n_opt" = "" ; then
+  mv $CODE_HOME/MakeAllLibs.out $CODE_HOME/MakeAllLibs.old
+fi
+
+if test "$UT_VERSION_LABEL" = "" ; then
+  export UT_VERSION_LABEL=$BuildLabel
+fi
+
+if test "$BuildLabel" = "" ; then
+  export BuildLabel=$UT_VERSION_LABEL
+fi
+
+######################################################################
+# Check that the Builder has set the UT_VERSION_LABEL environment var
+######################################################################
+CheckVersionLabel
+if [ $? -ne 0 ]
+then
+   exit 1
+fi
+
+#####################################################################
+# Find the release, and set all the associated environment variables#
+#####################################################################
+
+if test "$b_opt" == "" ; then
+. SelectRelease
+else
+. SelectRelease <<EOF
+$b_opt
+EOF
+fi
+
+if test "$UT_VERSION_LABEL" = "" ; then
+  export UT_VERSION_LABEL=$BuildLabel
+fi
+
+
+echo LIBDIRS: $LibDirs
+
+
+if [ -z "$LibDirs" ]
+then
+   print -n "The SelectRelease script is incorrect. The LibDirs environment "
+   print    "variable has not been set"
+   exit 1
+fi
+
+
+BuildList=$SCRIPT_HOME/$LibDirs
+
+############################
+# Check the buildlist exists
+############################
+if [ ! -f $BuildList ]
+then
+   print "The build list : $BuildList does not exist."
+   exit 1
+else
+   print "\nUsing ${BuildList} as the buildlist\n"
+fi
+
+#######################################################
+# Test to see if the environment variable BUILD_NO_DEBUG
+# is set to something no null
+# If it is set, then unset the DBG_TOGGLE
+# make the -e option (to use environment variables)
+# If it isn't then continue as normal
+# NOTE: If the developer has put -g in any other DBG flags
+# this will not produce a non-debug build - but this is
+# our best attempt
+# ######################################################
+if [ -n "$BUILD_NO_DEBUG" ]
+then
+  print "Building with no debug"
+  export DBG_TOGGLE=
+  USE_ENVIRON=-e
+else
+  USE_ENVIRON=
+fi
+
+########################
+# 	Build libraries
+########################
+for LIBDIR in ` grep -v '#' ${BuildList} `  
+do
+  cd $BUILD_HOME/$LIBDIR
+  echo Directory now $PWD >> $CODE_HOME/MakeAllLibs.out
+ if test "$n_opt" = "" ; then
+   $execroot/mk $n_opt $USE_ENVIRON all >> $CODE_HOME/MakeAllLibs.out 2>&1
+ else
+   $execroot/mk $n_opt $USE_ENVIRON all  2>&1
+ fi
+  # create a bit of disk space
+  # Done in CleanLibraryObjects
+done
+
+########################
+# 	Refresh libraries
+########################
+for DIR in ` grep -v '#' ${BuildList} `  
+do
+(
+   cd $BUILD_HOME/$DIR
+   refresh_local
+   # remove any libraries to create some disk space.
+   if [ -f *.a ]
+   then
+     rm *.a
+   fi
+)
+done
+

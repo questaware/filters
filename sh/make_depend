@@ -1,0 +1,24 @@
+#
+
+while expr "$1" : "-[a-z]*" > /dev/null ; do
+  if test "$1" = "-n" ; then
+    n_opt=$1
+  else
+    opts="$opts $1"
+  fi
+  shift 1
+done
+
+if test ! -a all.u
+then
+  touch all.u
+fi
+
+f=`ls -m *.cpp 2> /dev/null`
+g=`echo $f | sed -e "s/\.cpp/\.u/g" -e "s/\,//g"`
+if test "$g" != "" ; then
+ echo "make_depend " $g
+ make $n_opt $g 2> /dev/null
+ rm -f all.u
+ cat *.u > all.u
+fi

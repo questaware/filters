@@ -1,0 +1,26 @@
+stree { options } { directory }*                 Version 1.03
+          -\\       -- Use \\ as separator
+          -f        -- read these options from stdin
+          -@{@}     -- read filenames {any names} from stdin
+        -o{12} file -- redirect output
+ ACTIONS: -i        -- Ask about each entry
+          -{SvlL}   -- No trailing /, Verbose, long, very long
+          -q        -- shorten names where possible
+          -u        -- Dont traverse directories with more than 1 link.
+          -#        -- Count
+     -{cC}{?b} dir  -- Compare with file in dir (C:verbose)(?:if there)(blanks)
+          -d{y}     -- Delete {no confirm}
+      -{e|p} pat    -- command to execute/print; %s: whole,%t: tail
+ SELECTION CONDITIONS or'd:
+       -{-+01234}   -- Show directories first, last, recurse to level n
+       -/{u} rexp   -- match file u: ignore case, TRAILING / => directory
+       -/{rahs}     -- Read,Arch,Hidden,Sys bit set, n : not set
+       -{n}{gG} pat -- {not} Grep for pattern, G : ignore case, no sep => word
+       -s {-}size   -- Greater{/Less} than size, (try -#s 1)
+       -m{b} date   -- Newer{/Older} than {yy{yy}yy/mm{m}/dd}{/}{hh:mm:ss}
+ SELECTION CONDITIONS and'd:
+         +n/{u} rexp  -- and not match file
+         +{n}/{rahs}  -- and {not} properties set
+         +{n}(gG) pat -- and {not} contains pattern
+  where a leading -g may be omitted and -//pat is equivalent to -/ *pat
+  try: stree pat -\ -//.cpp -e "type %s"

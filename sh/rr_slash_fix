@@ -1,0 +1,22 @@
+###########################################################
+# @(#)rr_slash_fix	1.2
+#
+# Filename: rr_slash_fix
+#
+# Description:
+#
+#   Ksh script to swap '\' for '/' in #include pathnames
+#   for 'rw' includes in RR generated files.
+#
+#	Change #include "xxx" to #include <xxx>
+#
+# Author: Dave Levett
+###########################################################
+
+
+sed '/#include "rw/s,\\,/,g;s,\(#include[	 ]*\)"\([a-zA-Z0-9/.]*\)",\1<\2>,' $1 > $1~
+
+if ! test -w $1 ; then
+  chmod -w $1~
+fi
+mv -f $1~ $1

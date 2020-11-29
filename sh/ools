@@ -1,0 +1,67 @@
+#!/bin/ksh
+
+fonly=
+owner='RANDREWS'
+blksz=8
+atdb=
+
+
+
+if test "X$ORA_SCHEMA" = "X"; then
+ #ORA_SCHEMA=misapp/password
+ ORA_SCHEMA=/
+fi
+
+if test "$ORACLE_HOME" = "" ; then
+  ORACLE_HOME=/opt/oracle/8.1.6.3
+fi
+
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-f" ; then
+   shift 1
+   fonly=1
+ elif test "$1" = "-o" ; then
+   owner=$2
+   shift 2
+ elif test "$1" = "-a" ; then
+   atdb="@cobra"
+   test "$owner" = "YMODAPP" && owner='YM01'
+   shift 1
+ elif test "$1" = "-b" ; then
+   blksz=$2
+   shift 2
+ elif test "$1" = "-u" ; then
+   ORA_SCHEMA=$2
+   shift 2
+ else
+   echo 'oot {-q} {-f} {-o owner} {-b blksz} file'
+   echo ' -f -- fields only'
+   exit 1;
+ fi
+
+done
+
+table=$1
+					# Table specified
+
+ table=`echo $table | tr "[a-z]" "[A-Z]"`
+
+cat <<EOF | sqlplus -s $ORA_SCHEMA | sed -e '/^$/d'
+
+set linesize 1000;
+set pagesize 10000;
+
+column column_name fold_before
+
+break on table_name skip 1;
+
+select * from all_objects 
+where object_name = '$table';
+
+EOF
+
+

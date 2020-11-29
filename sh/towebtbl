@@ -1,0 +1,8 @@
+#!/bin/ksh
+
+#
+
+file=$1
+
+
+sed -e 's,^,<tr><td>,;s,	,</td><td>,g;s,$,</td></tr>,' $file

@@ -1,0 +1,2 @@
+stree -e "timediff -60 %s" ~/ts
+

@@ -1,0 +1,9 @@
+#!/bin/ksh
+
+#
+
+cmt=#
+
+ksh <<EOF
+echo A $cmt b
+EOF

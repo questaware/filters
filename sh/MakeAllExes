@@ -1,0 +1,152 @@
+#!/usr/bin/ksh
+
+# *********************************************************************
+#
+# Program : MakeAllExes
+#
+# Description : Builds all the executables for a particular release
+#   Assumes that GetAllSource, and BuildLibraries have been run.
+#   The environment variable UT_VERSION_LABEL MUST be set before 
+#   running this script
+#
+# Author : David Pankhurst
+#
+# Date : 16-June-1999
+#
+# *********************************************************************
+
+execroot=`whence $0`
+execroot=`dirname ${execroot}`
+
+
+b_opt=
+export n_opt=
+opts=
+
+while expr "$1" : "-[a-z]*" > /dev/null ; do
+  if   test "$1" = "-B" ; then
+    b_opt=$2
+    shift 1
+  elif test "$1" = "-n" ; then
+    n_opt=-n
+  else
+    opts="$opts $1"
+  fi
+  shift 1
+done
+
+#####################################
+# Set up some environment variables
+#####################################
+export BUILD_HOME=$PWD
+if expr "$BUILD_HOME" : ".*/code" > /dev/null ; then
+export CODE_HOME=$BUILD_HOME
+else
+export CODE_HOME=$BUILD_HOME/code
+fi
+echo CODE_HOME is $CODE_HOME
+
+SCRIPT_HOME=$COBRA_HOME/appl/buildbin
+
+if test "n_opt" = "" ; then
+  mv $CODE_HOME/MakeAllExes.out $CODE_HOME/MakeAllExes.out.old
+fi
+
+if test "$UT_VERSION_LABEL" = "" ; then
+  export UT_VERSION_LABEL=$BuildLabel
+fi
+if test "$BuildLabel" = "" ; then
+  export BuildLabel=$UT_VERSION_LABEL
+fi
+
+######################################################################
+# Check that the Builder has set the UT_VERSION_LABEL environment var
+######################################################################
+CheckVersionLabel
+if [ $? -ne 0 ]
+then
+   exit 1
+fi
+
+
+#####################################################################
+# Find the release, and set all the associated environment variables#
+#####################################################################
+
+if test "$b_opt" == "" ; then
+. SelectRelease
+else
+. SelectRelease <<EOF
+$b_opt
+EOF
+fi
+
+echo LIBDIRS: $LibDirs
+
+if [ -z "$MakeExes" ]
+then
+   print -n "The SelectRelease script is incorrect. The MakeExes environment "
+   print    "variable has not been set"
+   exit 1
+fi
+
+
+BuildScript=$SCRIPT_HOME/$MakeExes
+if test -x $execroot/$MakeExes ; then
+  BuildScript=$execroot/$MakeExes
+  echo LOCAL VERSION
+fi
+
+if ! test -x $SCRIPT_HOME/$MakeExes ; then
+  if test -r $SCRIPT_HOME/$MakeExes ; then
+    
+    cp $SCRIPT_HOME/$MakeExes $execroot/$MakeExes
+    chmod +x $execroot/$MakeExes
+    BuildScript=$execroot/$MakeExes
+    echo COPIED TO LOCAL VERSION
+  fi
+fi
+
+###############################
+# Check the build script exists
+###############################
+if [ ! -f $BuildScript ]
+then
+   print "The executable build script : $BuildScript does not exist."
+   exit 1
+else
+   print "\nUsing $BuildScript as the executable build script\n"
+fi
+
+#######################################################
+# Test to see if the environment variable BUILD_NO_DEBUG
+# is set to something no null
+# If it is set, then unset the DBG_TOGGLE
+# make the -e option (to use environment variables)
+# If it isn't then continue as normal
+# NOTE: If the developer has put -g in any other DBG flags
+# this will not produce a non-debug build - but this is
+# our best attempt
+# ######################################################
+if [ -n "$BUILD_NO_DEBUG" ]
+then
+  print "Building with no debug"
+  export DBG_TOGGLE=
+  export USE_ENVIRON=-e
+else
+  export USE_ENVIRON=
+fi
+
+echo $BuildScript
+
+#####################################
+# Now run the correct build script
+#####################################
+
+PATH=$execroot/redirect:$PATH
+
+if test "$n_opt" = "" ; then
+ $BuildScript $n_opt >> $CODE_HOME/MakeAllExes.out 2>&1
+else
+ $BuildScript 2>&1
+fi

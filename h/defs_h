@@ -1,0 +1,51 @@
+#define OK 0
+#define NOT_FOUND 1
+#define HALTED 2
+#define PAGE_UP 3
+#define PAGE_DOWN 4
+
+#define Ldn Short
+#define Page_nr Int
+#define Offs short
+#define Cash long
+
+typedef Int Lra_t;
+typedef Lra_t * Lra;
+
+#define BLOCK_SIZE 512
+		/* the above must be a power of two */
+#define LOG_BLOCK_SIZE 9
+
+#define bad_ptr(x) (((int)x & 0xffffff00) == 0)
+
+#define ULIM_MAX 36700160
+
+#define ROOT_PAGE 0L
+
+#define LDATE    10
+
+#define mrealloc(p,n) realloc((char *)(p), n)
+
+extern Char * chk_malloc __((Int));
+
+extern void native_cp __((Char *, Char *, Short));
+extern Bool read_page __((Short, Int, void *));
+extern Bool write_page __((Short, Int, void *));
+
+extern Char * strmatch __((Char *, Char *));
+extern Char * strpcpy __((Char *, Char *, Short));
+extern Char * strchcpy __((Char *, Char, Short));
+
+extern Char * skipspaces __((Char*));
+extern Char * skipalnum __((Char*));
+
+extern void chop3 __((Char **, Char *, Char));
+
+extern Date day_no __((Short, Short, Short));
+extern Short to_week __((Date));
+extern Short next_month __((Date));
+
+extern Char bigspaces [];
+
+#define Q_UNLOCKED 0
+#define Q_LOCKED   1

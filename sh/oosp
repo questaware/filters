@@ -1,0 +1,38 @@
+#!/bin/ksh
+
+#
+
+if test "$ORACLE_HOME" = "" ; then
+  export ORACLE_HOME=/opt/oracle/8.1.6
+fi
+
+if test "X$ORA_SCHEMA" = "X"; then
+ #ORA_SCHEMA=misapp/password
+ ORA_SCHEMA=/
+fi
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if test "$1" = "-u" ; then
+   ORA_SCHEMA=$2
+   shift 2
+ else
+   echo 'oosp [-u user]'
+   echo '-u  user -- oracle schema'
+   break;
+ fi
+
+done
+
+cat <<EOF | sqlplus -s $ORA_SCHEMA
+
+set linesize 10000;
+set pagesize 10000;
+set long 5000;
+
+select * from user_extents;
+select tablespace_name, sum(bytes), sum(blocks)
+from user_free_space
+group by tablespace_name;
+
+EOF

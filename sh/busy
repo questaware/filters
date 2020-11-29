@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+#
+
+/usr/ucb/echo -n "busy " >> ~/docs/worklog
+date >>                     ~/docs/worklog

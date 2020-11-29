@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+colour=${1:-blue}
+
+echo ']11;gray'
+echo "]12;$colour"

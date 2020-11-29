@@ -1,0 +1,49 @@
+#!/bin/ksh
+
+#
+execroot=`whence $0`
+execroot=`dirname ${execroot}`
+
+u_opt=
+
+while expr "$1" : "-[a-z]*" > /dev/null ; do
+  if   test "$1" = "-u" ; then
+    u_opt=1
+  else
+    echo 'pretty_r [-u] [ file [ dbname ] ]'
+    exit 0
+  fi
+  shift 1
+done
+
+db=${2:-}
+
+if test -n "$u_opt" ; then
+  
+ echo Roles
+ 
+ grep "OPS\$Y" "${db}_rg.txt" | \
+ sed -e '/CONNECT/d;/GRANT/d;/ DBA *$/d;s,\([^ ]*\) *\([^ ]*\),\2 \1,' | \
+ sort | sameword -o -j - | \
+ sed -e 's,  *, = ,;s/    */ /g'
+
+ echo
+ echo Users
+
+ grep "OPS\$Y" "${db}_rg.txt" | \
+ sed -e '/CONNECT/d;/GRANT/d;/ DBA *$/d;s/\$/_/g' | \
+ sort | sameword -o -j - | \
+ sed -e 's,  *, = ,;s/    */ /g'
+fi
+
+sameword -nl $1 | awk -f $execroot/extr.awk | ksh -
+cd td
+
+echo $db
+
+for ix in * ; do
+echo //Role $ix=$db
+$execroot/edrole $ix
+echo
+done
+

@@ -1,0 +1,70 @@
+#!/bin/ksh
+
+fonly=
+owner='YMODAPP'
+
+while expr "$1" : "-[qfo]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-f" ; then
+   shift 1
+   fonly=1
+ elif test "$1" = "-o" ; then
+   owner=$2
+   shift 2
+ else
+   echo 'oos { table }'
+   break;
+ fi
+
+done
+
+table=$1
+if test "$table" != "" ; then
+					# Table specified
+
+ table=`echo $table | tr "[a-z]" "[A-Z]"`
+
+cat <<EOF | sqlplus -s /
+
+set linesize 1000;
+set pagesize 10000;
+
+column column_name fold_before
+
+break on table_name skip 1;
+
+select substr(at.table_name, 0, 28) table_name,
+       at.blocks * 8
+from all_tables at
+where at.table_name='$table'
+order by table_name;
+
+EOF
+
+else
+					# Table not specified
+
+cat <<EOF | sqlplus -s / | sed -e '/^$/d'
+
+set linesize 1000;
+set pagesize 10000;
+
+column table_name fold_before
+column cid format 999999 fold_before
+
+break on table_name skip 1;
+
+select
+       substr(at.table_name, 0, 28) table_name, 
+	at.blocks * 8
+from all_tables at
+where 
+   at.owner='$owner'
+order by table_name;
+
+EOF
+
+fi
+

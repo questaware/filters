@@ -1,0 +1,4 @@
+#!/bin/ksh
+
+stree -cb $* | e -I%otherdrv $1/
+

@@ -1,0 +1,52 @@
+#!/bin/ksh
+
+fonly=
+user=misapp/password
+owner='MISAPP'
+blksz=8
+
+while expr "$1" : "-[qfob]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-f" ; then
+   shift 1
+   fonly=1
+ elif test "$1" = "-o" ; then
+   owner=$2
+   shift 2
+ elif test "$1" = "-b" ; then
+   blksz=$2
+   shift 2
+ else
+   echo 'oou {-q} {-o owner} {-b blksz} field'
+   echo ' tables having field'
+   break;
+ fi
+
+done
+
+field=$1
+if test "$field" = "" ; then
+ echo No field given
+ exit;
+fi
+
+ field=`echo $field | tr "[a-z]" "[A-Z]"`
+
+
+cat <<EOF | sqlplus -s $user | sed -e '/^$/d'
+
+set linesize 1000;
+set pagesize 10000;
+
+select tc.table_name 
+from all_tab_columns tc
+where(tc.owner='$owner'
+  or  tc.owner='SYS')
+ and tc.column_name = '$field'
+order by table_name;
+
+EOF
+
+

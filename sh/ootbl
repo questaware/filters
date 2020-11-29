@@ -1,0 +1,43 @@
+#!/bin/ksh
+
+#
+
+if test "X$ORA_SCHEMA" = "X"; then
+ #ORA_SCHEMA=misapp/password
+ ORA_SCHEMA=/
+fi
+
+if test "$ORACLE_HOME" = "" ; then
+  export ORACLE_HOME=/opt/oracle/8.1.6.3
+fi
+
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-u" ; then
+   ORA_SCHEMA=$2
+   shift 2
+ else
+   echo 'orash file'
+   break;
+ fi
+
+done
+
+rec=$*
+if test "$rec" = "" ; then
+ exit
+fi
+
+cat <<EOF | sqlplus -s $ORA_SCHEMA
+
+set linesize 1000;
+set pagesize 10000;
+
+set arraysize 4
+
+select * from $rec;
+
+EOF

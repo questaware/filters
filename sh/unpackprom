@@ -1,0 +1,134 @@
+#!/bin/ksh
+
+root=`pwd`
+tarfile=pack.tar
+parc=/ym/data/download2/Promotion_Archives
+
+NROOT=/smpl14/ba_live
+OROOT=/smpl33/ba_live
+YROOT=/smpl33/ba_live/YM
+
+while expr "$1" : "-[a-zA-Z]" > /dev/null ; do
+
+ if   test "$1" = "-R" ; then
+   root=$2   
+   shift 2
+ elif test "$1" = "-s" ; then
+   tarfile=$2
+   shift 2
+ elif test "$1" = "-a" ; then
+   parc=$2
+   shift 2
+ elif test "$1" = "-N" ; then
+   NROOT=$2
+   shift 2
+ elif test "$1" = "-O" ; then
+   OROOT=$2
+   shift 2
+ else
+   echo 'unpackprom [ -R root ]'
+   echo ' -R root -- Root directory'
+   exit 1;
+ fi
+
+done
+
+if ! mkdir uptmp ; then
+  unable to make temporary directory uptmp
+  exit 1
+fi
+
+tstamp=`date '+%d%m%y'`
+
+PNARC=L14
+POARC=L33
+PYARC=L33Y
+
+BN=
+TGT=
+ARCTGT=
+
+cd uptmp
+rtf=$tarfile
+if ! expr "$tarfile" : "/.*/" > /dev/null ; then
+  rtf="../$tarfile"
+fi
+
+echo RTF $rtf
+
+tmpfile=`tar -xvf $rtf | sed -e 's,x /tmp\([^,]*\).*,/tmp\1,p;d'`
+
+if test "$tmpfile" = "" ; then
+  echo Couldnt find the tar file $rtf or the manifest in it
+  tar -xvf $rtf
+  echo did tar
+  cd .. 
+  rm -rf uptmp
+  exit 1
+fi
+
+echo TF is $tmpfile
+
+cat $tmpfile | \
+(while read TYPE LINE; do
+
+  if   test "$TYPE" = "=" ; then
+    bn=`basename $LINE`
+    cmp $LINE $TGT/$bn 2> /dev/null
+    rc=$?
+    if test $rc -eq 0; then
+       echo "FILES ARE THE SAME $TGT/$bn"
+    else
+       let exist=1
+       if test $rc -ne 1; then
+         echo "NEW FILE $TGT/$bn"
+         exist=0  
+       fi
+       set -x
+       test $exist -ne 0 && mv $TGT/$bn $TGT/$bn.FTP.$tstamp
+       
+       if cp -f $LINE $TGT/$bn && chmod 550 $TGT/$bn ; then
+         test $exist -ne 0 && mv $TGT/$bn.ftp.* $parc/$ARCTGT/$BN/
+         test $exist -ne 0 && mv $TGT/$bn.FTP.$tstamp $TGT/$bn.ftp.$tstamp
+	 echo Did $TGT/$bn
+       else
+         test $exist -ne 0 && mv $TGT/$bn.FTP.$tstamp $TGT/$bn
+       fi
+       set +x
+    fi
+  elif test "$TYPE" = "N" ; then
+    case $LINE in
+      "scripts") BN=scripts ;;
+      "opins") BN=opins ;;
+      "exe") BN=pgmlib ;;
+      "bin") BN=pgmlib ;;
+      "lib") BN=pgmlib ;;
+    esac
+    TGT=$NROOT/$BN
+    ARCTGT=$PNARC
+  elif test "$TYPE" = "O" ; then
+    case $LINE in
+      "scripts") BN=scripts ;;
+      "opins") BN=opins ;;
+      "exe") BN=pgmlib/bin ;;
+      "bin") BN=pgmlib/bin ;;
+      "lib") BN=pgmlib/lib ;;
+    esac
+    TGT=$OROOT/$BN
+    ARCTGT=$POARC
+  elif test "$TYPE" = "Y" ; then
+    case $LINE in
+      "scripts") BN=scripts ;;
+      "opins") BN=opins ;;
+      "exe") BN=pgmlib/bin ;;
+      "bin") BN=pgmlib/bin ;;
+      "lib") BN=pgmlib/lib ;;
+    esac
+    TGT=$YROOT/$BN
+    ARCTGT=$PYARC
+  fi
+done
+)
+
+cd ..
+rm -rf uptmp

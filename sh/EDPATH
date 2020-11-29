@@ -1,0 +1,79 @@
+#!/bin/ksh
+
+#
+
+#set -x
+export v0=PATH
+export vbl=\$$v0
+
+pre=
+app=
+
+asgn=
+list=
+
+
+while expr "$1" : "-[a-z=]" > /dev/null ; do
+
+ if   test "$1" = "-v" ; then
+   v0=$2
+   vbl=\$$2
+   shift 2
+ elif test "$1" = "-p" ; then
+   pre=$2
+   shift 2
+ elif test "$1" = "-a" ; then
+   app=$2
+   shift 2
+ elif test "$1" = "-r" ; then
+   src=`echo $2 | sed -e 's,:.*,,'`
+   tgt=`echo $2 | sed -e 's,.*:,,p;d'`
+   shift 2
+ elif test "$1" = "-=" ; then
+   asgn=1
+   shift 1
+ elif test "$1" = "-l" ; then
+   list=1
+   shift 1
+ else
+   echo 'EDPATH [-=] [-v variable] [-p dir] [-a dir] [ -r old[:new] ]'
+   echo ' -=          -- output an assignment command'
+   echo ' -l          -- output entries one per line'
+   echo ' -v variable -- variable to edit'
+   echo ' -p dir      -- prepend dir'
+   echo ' -a dir      -- append dir'
+   echo ' -r old:new  -- replace occurences of old with new'
+   echo 'to update use:'
+   echo ' . EDPATH -='
+   return;
+ fi
+
+done
+
+
+VBL=$(ksh -e "echo $(echo $vbl)")
+
+cmd="s,^\\\.:,:,"
+
+if test "$pre" != ""; then
+  cmd="$cmd;s,^,$pre:,"
+fi
+
+if test "$app" != ""; then
+  cmd="$cmd;s,$,:$app,"
+fi
+if test "$tgt$src" != "" ; then
+  cmd="$cmd;s,$src,$tgt,g"
+fi
+
+if test "$list" != "" ; then
+  echo $VBL | sed -e "$cmd;p;d" | tr ":" "\012"
+elif test "$asgn" = ""; then
+  echo $VBL | sed -e "$cmd;p;d"
+else
+  cmd="$cmd;s,^,$v0=,"
+  eval `echo $VBL | sed -e "$cmd;p;d"`
+fi
+
+
+

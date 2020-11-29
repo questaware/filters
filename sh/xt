@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+#
+
+xterm -ls -T D3 -bg gray %geom 82X52
+

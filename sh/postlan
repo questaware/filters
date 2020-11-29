@@ -1,0 +1,51 @@
+#!/bin/ksh
+
+#
+
+d_opt=
+
+while expr "$1" : "-[a-zA-Z]" > /dev/null ; do
+
+ if   test "$1" = "-d" ; then
+   d_opt=1
+   shift
+ else
+   echo 'postlan files'
+   echo ' where files are the files to be posted'
+   exit
+ fi
+
+done
+
+
+if ! test "$*" ; then
+  echo No files specified
+  exit
+fi
+
+
+for fn in $* ; do
+
+ if ! test -r $fn ; then
+  echo File $fn cannot be accessed
+  exit 1
+ fi
+
+done
+
+now=`date +'%y%m%d'`
+
+rm -rf lanrep > /dev/null
+mkdir lanrep
+
+cp $* lanrep/
+
+cd lanrep
+
+ls NEWNSA* | sed -e 's,NEWNSA\(.*\),mv NEWNSA\1 NSA\1,' | ksh -
+for fn in * ; do
+  unix2dos $fn $fn 2> /dev/null
+done
+
+cd ..
+

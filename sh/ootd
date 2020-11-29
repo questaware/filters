@@ -1,0 +1,10 @@
+#!/bin/ksh
+
+#
+
+execroot=$(whence $0)
+execroot=$(dirname $execroot)
+
+tbl=$(echo $1 | tr "a-z" "A-Z")
+
+ooe desc $tbl | crumple -h 3

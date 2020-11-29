@@ -1,0 +1,7 @@
+#!/bin/ksh
+
+#
+
+sed -e 's,[^ ]* has \([A-Z]*\) on \(.*\),\2	\1,' ${1:-} | \
+sort | sameword -o -j - |
+sed -e 's,	SELECT $,,;s,	,=,;s,	, ,g;s,=DELETE,=D.,;s,\([=.]\) *INSERT,\1I.,;s,\([=.]\) *SELECT,\1S.,;s,\([=.]\) *UPDATE,\1U,;s,\.,,g'

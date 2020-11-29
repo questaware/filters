@@ -1,0 +1,18 @@
+#!/bin/ksh
+
+if [[ $# -lt 2 ]]; then
+  echo 'Usage: ftpget machine file*'
+  return
+fi
+    
+mach=$1
+shift
+    
+for file in $* ; do
+    
+  touch $file
+  file=$(spath -/ $file .)
+  rel=$(expr $file : "$HOME/\(.*\)")
+  ftpg $mach $rel
+done
+

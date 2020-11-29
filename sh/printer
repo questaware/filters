@@ -1,0 +1,2 @@
+mp -A4 -land -o $1 | lp
+

@@ -1,0 +1,10 @@
+device=C:\windows\himem.sys
+dos=high,umb
+device=c:\windows\emm386.exe noems
+device=C:\WINDOWS\COMMAND\display.sys con=(ega,,1)
+device=C:\WINDOWS\COMMAND\ansi.sys
+
+FILES=30
+lastdrive=t
+
+Country=044,437,C:\WINDOWS\COMMAND\country.sys

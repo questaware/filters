@@ -1,0 +1,40 @@
+#!/bin/ksh
+
+ofile=DIRLIST
+
+oopts=
+
+let c_opt=0
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-o" ; then
+   ofile=$2
+   shift 2
+ elif test "$1" = "-c" ; then
+   shift 1
+   c_opt=1
+ elif test "$1" = "-x" ; then
+   echo 'filesnap {-c} {-opts} { -o file } { directory }'
+   echo ' Generates a snapshot below directory of file mod times, sizes and access modes'
+   echo '   -o  file   -- The destination/comparison source'
+   echo '   -c         -- Compare with the comparison'
+   echo '   -x         -- Produce this help'
+   echo '   -opts      -- Any other legal option to program stree'
+   exit 1;
+ else
+   oopts="$oopts $1"
+   shift 1
+ fi
+
+done
+
+diry=${1:-.}
+
+if test $c_opt -eq 0; then
+  
+  stree -q $oopts -L $diry | sort -k 4 > $ofile
+else
+  
+  stree -q $oopts -L $diry | sort -k 4 | diff $ofile -
+fi

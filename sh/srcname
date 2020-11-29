@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+#
+echo > /dev/null
+fc -nl -1 -1
+

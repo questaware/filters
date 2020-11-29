@@ -1,0 +1,18 @@
+#!/bin/ksh
+
+execroot=`whence $0`
+execroot=`dirname ${execroot}`
+
+export secs=$1
+if test -z $secs ; then
+ echo "runxterm secs args"
+ return
+fi
+
+shift
+
+echo $* > /tmp/pjsrunx
+chmod +x /tmp/pjsrunx
+
+xterm -geom 40X3 -fn 10X20 -bg RED -fg BLUE -e "${execroot}/runsleep"
+ 

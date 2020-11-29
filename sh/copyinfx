@@ -1,0 +1,20 @@
+#!/bin/ksh
+
+mydb=${1:-$SamDatabase}
+
+src=${1:-src}
+tgt=${2:-tgt}
+
+dbexport $src
+
+cat <<eof | COLUMNS=132 dbaccess
+rename database $src to $tgt
+eof
+
+if [ $? -ne 0 ] ; then
+  echo 'rename $src to $tgt failed'
+  return 2
+fi
+
+dbimport $src -d sacdbs -l buffered
+

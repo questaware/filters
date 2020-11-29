@@ -1,0 +1,11 @@
+#!/bin/ksh
+
+mydb=${1:-pjs1}
+
+clear
+
+if dbaccess ${mydb} ; then
+  sleep 1;
+else
+  sleep 3
+fi

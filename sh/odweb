@@ -1,0 +1,36 @@
+#!/bin/ksh
+
+#
+
+file=$1
+d=`date +'%d/%m/%y'`
+
+
+cat > /tmp/odw$$ <<EOF
+s,OPTIMISE REPORT,dD<table border=1 bgcolor=#ddddcc>,p
+s,The last bank_id .*,dD<tr><td>\&nbsp</td><td>$d</td><td>\&nbsp</td></tr>,p
+s,The last bank_id optimised at[^0-9]*\([^	]*\).*,dD<tr><td>Overnight Optimisation finished at:</td><td>\1</td><td>\&nbsp;</td></tr>,p
+s,Flights switched over to O&D        :- \([0-9]*\),dD<tr><td>Number of flights in O\&D for Optimisation</td><td>\1</td><td>\&nbsp;</td></tr>,p
+s,Number of banks optimised           :- \([0-9]*\).*,dD<tr><td>Number of banks successfully Optimised</td><td>\1</td><td>\&nbsp;</td></tr>,p
+s,Number of flight ops created        :- \([0-9]*\).*,dD<tr><td>Number of Flight Ops successfully created</td><td>\1</td><td>\&nbsp;</td></tr>,p
+s,Number of banks optimised           :- \([0-9]*\).*,dD<tr><td>Number of banks failing Optimisation</td><td>?</td><td>\&nbsp;</td></tr>,p
+s,The last rcdms were sent to Babs at :- \([^	]*\).*,dD<tr><td>The recommendations were sent to RS13 by</td><td>\1</td><td>\&nbsp;</td></tr>,p
+s,bkg0213.1_2 was recieved at \([0-9:]*\).*,dD<tr><td>Puma  Arrived at:</td><td>\1</td><td>\&nbsp;</td></tr>,p
+s,BANK RE.*,dD</table>,p
+/ERROR  OCCURRENCES CATEGORY    FLIGHTS/,/YM12_offline/s,.*,eE&,p
+d
+EOF
+
+cat > /tmp/odx$$ <<EOF
+s,dD\(.*\),\1,p
+s,eEERR.*,<table border=1>,p
+s,eE\([0-9][0-9]*\)[^0-9]*\([0-9]*\)[^0-9]*\([0-9]*\)[ 	]*\(.*\),<tr><td>\3</td><td>\1</td><td>\2</td><td>\4</td>,p
+s,eEMESSAGE TXT :--> \(.*\),<td>\1</td></tr>,p
+s,.*YM12_offline.*,</table>,p
+d
+EOF
+
+sed -f /tmp/odw$$ $file | sed -f /tmp/odx$$
+
+
+

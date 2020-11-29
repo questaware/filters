@@ -1,0 +1,8 @@
+#!/bin/ksh
+
+#
+
+test "$SRCDIR" = "" && SRCDIR=/ym/appl/pvcs
+
+stree -q -- -//.abcd -e "mkdir %s; ln -s $SRCDIR/%s/vcs.cfg %s" $SRCDIR
+

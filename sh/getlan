@@ -1,0 +1,40 @@
+#!/bin/ksh
+
+#
+
+
+d_opt=
+
+while expr "$1" : "-[a-zA-Z]" > /dev/null ; do
+
+ if   test "$1" = "-d" ; then
+   d_opt=1
+   shift
+ else
+   echo 'getlan [ -d ]'
+   echo ' where -d indicates to clean up the tar file'
+   echo ' transferred from L33'
+   exit
+ fi
+
+done
+
+
+
+
+now=`date +'%y%m%d'`
+
+rm -rf lanrep > /dev/null
+mkdir lanrep
+cd lanrep
+
+uncompress -c /tmp/putlan$now.Z | tar -xvf -
+
+ls NEWNSA* | sed -e 's,NEWNSA\(.*\),mv NEWNSA\1 NSA\1,' | ksh -
+for fn in * ; do
+  unix2dos $fn $fn 2> /dev/null
+done
+
+if test "$d_opt" ; then
+  rm /tmp/putlan$now.Z 
+fi

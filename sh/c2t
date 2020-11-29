@@ -1,0 +1,66 @@
+#!/bin/sh
+
+USAGE='Usage: c2h <file>'
+
+case $# in
+	1) ;;
+	*) echo $USAGE
+		exit 2;;
+esac
+
+#
+# Get file stats
+#
+
+echo "" > $1.txt
+echo "         File : \c" >> $1.txt
+echo `basename $1` >> $1.txt
+echo "         Date : \c" >> $1.txt
+date >> $1.txt
+
+cat $1 | awk '
+BEGIN {IN= 0; NCL= 0; NEL= 0}
+{
+	if ($1 ~ /\/\*/)
+		IN= 1
+
+	if (IN == 1) {
+		if ($0 ~ /\*\//) 
+			IN= 0
+		NCL= NCL+1
+	}
+	else if ($0 ~ /\/\//)
+		NCL= NCL+1
+
+	else if ($1 ~ /./)
+		NEL= NEL+1
+		
+}
+END {
+	printf "        Lines : %d\n", NR
+	printf "   Executable : %d\n", NEL
+	printf "     Comments : %d\n", NCL
+} ' >> $1.txt
+
+#
+# strip out tagged comments
+#
+
+echo "" >> $1.txt
+
+cat $1 | awk '
+BEGIN {IN= 0}
+{
+	if ($0 ~ /\/\*!/) 
+		IN= 1
+
+	if (IN == 1) {
+		print $0 
+		if ($0 ~ /\*\//)  {
+			print ""
+			IN= 0
+		}
+	}
+}
+END {} ' >> $1.txt
+

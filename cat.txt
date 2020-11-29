@@ -1,0 +1,14 @@
+./prog/crumple.c    Remove vertical space from ascii file.
+./prog/docrypt.c    Encrypt a file.
+./prog/edpath.c     Edit a PATH variable
+./prog/bin2hex.c    Dump in hex
+./prog/hex2bin.c    Undump in hex
+./prog/sameword.c   Filter by when # leading words are the same as line above.
+./prog/spath.c      Search a path for a file
+./prog/spread.c     Ascii spread sheet program.
+./prog/stree.c      Search for file in directory: faster/more powerful Unix find.
+./prog/tail.c       Unix tail.
+./prog/tcalc.c      Perform arithmetic upon year/month/day/h/m/s values.
+./prog/timediff.c   Add up a timesheet.
+
+

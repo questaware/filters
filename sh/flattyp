@@ -1,0 +1,7 @@
+#!/bin/ksh
+
+execroot=`whence $0`
+execroot=`dirname ${execroot}`
+
+sed -f $execroot/flattyp.sed $1
+

@@ -1,0 +1,30 @@
+# examples in ksh
+
+#### arrays
+
+set -A arr 0----- 1---- 2---- 3---- 4---- 5aaaaa 6AAAAA .....
+
+arr[6]=55
+arr[5]=five
+arr[7]=seven
+
+echo 0 ${arr[0]}
+echo 1 ${arr[1]}
+echo 2 ${arr[2]}
+echo 3 ${arr[3]}
+echo 4 ${arr[4]}
+echo 5 ${arr[5]}
+echo 6 ${arr[6]}
+echo 7 ${arr[7]}
+echo ALL $arr
+
+### expressions
+
+x=1
+y=2
+echo `expr $x + $y`
+
+let xx=1
+let yy=2
+echo $((xx)) + $((yy))
+

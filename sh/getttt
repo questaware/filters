@@ -1,0 +1,13 @@
+#!/bin/ksh
+
+#
+#			Uses parameter BuildLabel
+
+
+echo PPP $PWD
+
+if expr "$PWD" : "/ym/appl/pvcs" ; then
+  echo not in PVCS
+  exit 1
+fi
+

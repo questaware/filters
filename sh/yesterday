@@ -1,0 +1,39 @@
+#!/bin/ksh -x
+
+#
+
+
+if [ $# -eq 1 ]
+then
+        TODAY_DATE=$1
+else
+        TODAY_DATE=`date +'%d%m%y'`
+fi
+let yester_date=${TODAY_DATE}-10000
+YESTER_DATE=$yester_date
+
+if [ ${yester_date} -lt 10000 ]
+then
+ set -A days 0 31 28 31 30 31 30 31 31 30 31 30 31
+
+ let month=$(($yester_date / 100 - 1))
+ let year=$(($yester_date % 100))
+ if [ $month -eq 0 ] ; then
+   let month=12
+   let year=$year-1
+ fi
+
+ year2=$year
+ [ $year -lt 10 ] && year2="0$year2"
+
+ month2=$month
+ [ $month -lt 10 ] && month2="0$month2"
+
+ YESTER_DATE=${days[$month]}$month2$year2
+elif [ ${#YESTER_DATE} -eq 5 ]
+then
+ YESTER_DATE=0${YESTER_DATE}
+fi
+
+echo $YESTER_DATE
+

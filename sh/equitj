@@ -1,0 +1,11 @@
+#!/bin/ksh
+
+
+sed -e '/|/p;d' $1 | sort > /tmp/pjs$$
+sed -e '/|/p;d' $2 | sort > /tmp/pjsx$$
+
+join -t '|' -j 1 /tmp/pjs$$ /tmp/pjsx$$ | \
+sed -e 's,\(| [0-9]*\)[^|]*|\( [0-9]*\).*,\1 \2,' | \
+spread -s "![^|]|!d !d:v0v3v2-1000*v2/" -t "!s	!d" - | untab -w 35 - | \
+sed -e 's,^ \([A-Z0-9.]*\) ,&,;s,-,-,'
+rm /tmp/pjs$$

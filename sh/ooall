@@ -1,0 +1,90 @@
+#!/bin/ksh
+
+fonly=
+owner='MISAPP'
+blksz=8
+
+while expr "$1" : "-[qfob]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-f" ; then
+   shift 1
+   fonly=1
+ elif test "$1" = "-o" ; then
+   owner=$2
+   shift 2
+ elif test "$1" = "-b" ; then
+   blksz=$2
+   shift 2
+ else
+   echo 'oot {-q} {-f} {-o owner} {-b blksz} file'
+   echo ' -f -- fields only'
+   break;
+ fi
+
+done
+
+table=$1
+if test "$table" != "" ; then
+					# Table specified
+
+ table=`echo $table | tr "[a-z]" "[A-Z]"`
+
+cat <<EOF | sqlplus -s / | sed -e '/^$/d'
+
+set linesize 1000;
+set pagesize 10000;
+
+column column_name fold_before
+
+break on table_name skip 1;
+
+select substr(tc.table_name||' '||
+       decode(at.object_type, 'TABLE', '', lower(at.object_type)),
+                     0, 44) table_name,
+       substr('   '||tc.column_id||' '|| tc.column_name, 0, 24) column_name, 
+       substr(decode(tc.data_type,'VARCHAR2','VCHAR2',tc.data_type), 0,6) type,
+       tc.data_length
+from all_tab_columns tc, all_objects at
+where 
+      at.owner(+) = tc.owner
+ and  at.object_name(+) = tc.table_name
+ and (tc.owner='$owner'
+  or  tc.owner='SYS')
+ and  tc.table_name='$table'
+order by table_name, tc.column_id;
+
+EOF
+
+else
+					# Table not specified
+
+cat <<EOF | sqlplus -s / | sed -e '/^$/d'
+
+set linesize 1000;
+set pagesize 10000;
+
+column table_name fold_before
+column cid format 9999 fold_before
+
+break on table_name skip 1;
+
+select 
+       substr(tc.table_name||' '||
+       decode(at.object_type, 'TABLE', '', lower(at.object_type)),
+                              0, 44) table_name, 
+       tc.column_id                  cid,
+       substr(tc.column_name, 0, 24) column_name, 
+       substr(decode(tc.data_type,'VARCHAR2','VCHAR2',tc.data_type), 0,6) type
+from all_tab_columns tc, all_objects at
+where 
+      tc.owner='$owner'
+ and  at.owner(+)      = tc.owner
+ and  at.object_name(+) = tc.table_name
+order by table_name, cid;
+
+EOF
+
+fi
+

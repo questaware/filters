@@ -1,0 +1,84 @@
+stty erase "^H" kill "^U" intr  "^C" echoe tab3 -lcase
+stty hupcl ixon ixoff
+tabs
+STTYDFLT=`stty -g`
+
+# Set up the search paths:
+PATH=$HOME/bin:/usr/local/gnu/bin:/usr/local/bin:$PATH
+export SAVPATH=$PATH
+
+# Set up the shell environment:
+set -u
+trap "echo 'logout'" 0
+
+rstty()
+{ stty ${STTYDFLT}
+}
+
+umask 007
+
+# Set the prompt variables PS1, PS2 and PS3
+
+mycd()
+{ 'cd' $1
+  PS1=`pwd | sed -e "s,$HOME/,~,;s,$,>,"`
+}
+
+alias cd=mycd
+
+
+# Set up environment variables specific to sh
+
+export EDITOR=$HOME/bin/e
+export CC="gcc -ansi"
+
+# Set up environment variables specific to ksh
+
+TZ=GMT0BST
+
+# Set other variables
+
+export PATH SAVPATH PS1 PS2 PS3 EDITOR 
+
+
+# Set ignoreeof for first ksh and not in $ENV so that ^D can be used
+# everywhere else
+
+set -o ignoreeof
+
+alias ls='ls -CF'
+alias emk='make 2> cc; e cc'
+
+if [ -f ~/.bashrc ] ; then
+. ~/.bashrc
+fi
+
+export ORACLE_SID=oms
+. /usr/local/bin/oraenv
+
+export CVSROOT=/opt/repository/cvsroot
+#. ~sybase/sybenv
+
+export MANPATH=/opt/local/gnu/man/%L:$MANPATH
+
+# Local command functions
+
+
+diffs()\
+{ if test X$1 == X -o X$1 == 'X?'; then
+    echo Usage: diffs dir files
+    exit
+  fi
+  DIR=$1
+  shift
+  for i in "$*" ; do
+    echo $i >> /tmp/di0f$$
+    diff $DIR/$i $i >> /tmp/di0f$$
+  done
+  cat /tmp/di0f$$
+  rm /tmp/di0f$$
+}
+
+
+cls(){ tput clear 
+}

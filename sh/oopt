@@ -1,0 +1,69 @@
+#!/bin/ksh
+
+fonly=
+user=misapp/password
+owner='MISAPP'
+blksz=8
+
+while expr "$1" : "-[qfob]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-f" ; then
+   shift 1
+   fonly=1
+ elif test "$1" = "-o" ; then
+   owner=$2
+   shift 2
+ elif test "$1" = "-b" ; then
+   blksz=$2
+   shift 2
+ else
+   echo 'oot {-q} {-f} {-o owner} {-b blksz} file'
+   echo ' -f -- fields only'
+   break;
+ fi
+
+done
+
+table=$1
+if test "$table" != "" ; then
+					# Table specified
+
+ table=`echo $table | tr "[a-z]" "[A-Z]"`
+
+cat <<EOF | sqlplus -s $user | sed -e '/^$/d'
+describe $table;
+
+EOF
+
+else
+					# Table not specified
+
+cat <<EOF | sqlplus -s $user | sed -e '/^$/d'
+
+
+set pagesize 10000
+set linesize 10000
+
+column table_name fold_before
+column cid format 999999 fold_before
+
+break on table_name skip 1;
+
+
+select ac.table_name,
+       ac.column_id cid,
+       substr('   '||ac.column_id||' '|| ac.column_name, 0, 21) column_name, 
+       substr(decode(ac.data_type,'VARCHAR2','VCHAR2',ac.data_type), 0,6) type
+from all_tab_columns ac,
+     all_tables at
+where
+     ac.owner='YMODAPP'
+ and at.table_name(+) = ac.table_name
+ and at.owner(+) = ac.owner
+ and (at.table_name is null or at.table_name = '');
+
+EOF
+
+fi

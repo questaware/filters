@@ -1,0 +1,15 @@
+#!/bin/ksh
+
+#			chkindex dir filters
+
+dir=${1:-.}
+shift
+
+stree $* ${dir} | sort > /tmp/pjsgot$$
+cat index | stree -@@ $* | sort > /tmp/pjswant$$
+
+diff /tmp/pjswant$$ /tmp/pjsgot$$
+rm -f /tmp/pjswant$$ /tmp/pjsgot$$
+
+
+

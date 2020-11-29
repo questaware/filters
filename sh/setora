@@ -1,0 +1,43 @@
+#!/bin/ksh
+
+#
+
+if test "$0" != "-ksh" ; then
+  echo Must be called with .
+  return
+fi
+
+#which_edpath=EDPATH
+which_edpath=edpath
+
+src=$1
+tgt=$2
+if test "$tgt" = ""; then
+ tgt=$src
+ src=`echo $ORACLE_HOME | sed -e "s,/opt/oracle/,,p;d`
+ if test "$src" = "" ; then
+   src=`echo $PATH | sed -e "s,/opt/oracle/\([^/]*\)/.*,\1,p;d`
+   if test "$src" = "" ; then
+     echo Old setting?
+     read src
+   fi
+ fi
+fi
+
+
+#set -x
+eval `$which_edpath -= -r $src:$tgt`
+if expr "$LD_LIBRARY_PATH" : ".*/oracle/.*" > /dev/null; then
+ eval `$which_edpath -= -v LD_LIBRARY_PATH -r $src:$tgt`
+else
+ eval `$which_edpath -= -v LD_LIBRARY_PATH -a /opt/oracle/lib/$tgt`
+fi
+
+export ORACLE_HOME=/opt/oracle/$tgt
+
+if test "$tgt" = "7.3.4" ; then
+ BUILD_ORACLE_VERSION=ORACLE7
+else
+ BUILD_ORACLE_VERSION=ORACLE8
+fi
+

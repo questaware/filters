@@ -1,0 +1,15 @@
+#!/bin/ksh
+#	Print a newline after each first word changes
+
+cat <<'eof' > /tmp/pjs$$
+BEGIN { fld=""; }
+
+{ 
+  if ( ( $1 != fld ) && ( fld != "" ) ) { print sprintf("\n%s", $0); }
+  else
+    print $0;
+  fld=$1;
+}
+eof
+nawk  -f /tmp/pjs$$
+

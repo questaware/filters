@@ -1,0 +1,108 @@
+#!/bin/ksh
+
+tt=
+#if test "$ORACLE_SID" = "YM17" ; then
+#  tt=',vw.type_text'
+#fi
+
+
+fonly=
+user=misapp/password
+#user=/
+owner='MISAPP'
+oeqw="where vw.owner='$owner'"
+oeq="vw.owner='$owner' and"
+blksz=8
+atdb=
+
+while expr "$1" : "-[a-z]" > /dev/null ; do
+
+ if   test "$1" = "-q" ; then
+   shift 1
+ elif test "$1" = "-a" ; then
+   shift 1
+   atdb=@cobra
+ elif test "$1" = "-s" ; then
+   shift 1
+   owner='SYS'
+ elif test "$1" = "-f" ; then
+   shift 1
+   fonly=1
+ elif test "$1" = "-u" ; then
+   user=$2
+   shift 2
+ elif test "$1" = "-o" ; then
+   owner=$2
+   if test "$owner" == "ANY" ; then
+     oeq=
+     oeqw=
+   else
+     oeq="vw.owner='$owner' and"
+     oeqw="where vw.owner='$owner'"
+   fi
+   shift 2
+ elif test "$1" = "-b" ; then
+   blksz=$2
+   shift 2
+ else
+   echo 'oov {-f} {-s} {-o owner} {-b blksz} file'
+   echo ' -f -- fields only'
+   echo ' -s -- owner sys only'
+   exit;
+ fi
+
+done
+
+table=$1
+if test "$table" != "" ; then
+					# Table specified
+
+ table=`echo $table | tr "[a-z]" "[A-Z]"`
+
+cat <<EOF | sqlplus -s $user | sed -e '/^$/d'
+
+set long 3000;
+set linesize 1000;
+set pagesize 10000;
+
+set arraysize 4
+
+
+column text fold_before
+
+break on view_name skip 2;
+
+select substr(vw.view_name, 0, 25) view_name,
+       vw.text $tt
+from all_views$atdb vw
+where   $oeq 
+    vw.view_name = '$table'
+order by view_name;
+
+EOF
+
+else
+					# Table not specified
+
+cat <<EOF | sqlplus -s $user | sed -e '/^$/d'
+
+set long 3000;
+set linesize 1000;
+set pagesize 10000;
+
+set arraysize 4
+
+column view_name fold_before;
+column text fold_before;
+
+break on view_name skip 2;
+
+select substr(vw.view_name, 0, 25) view_name,
+       vw.text $tt
+from all_views vw $oeqw
+order by view_name;
+
+EOF
+
+fi
+

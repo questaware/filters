@@ -1,0 +1,18 @@
+#!/bin/ksh
+
+#				Make the incident log table and procedure
+
+if test -z "$1" ; then
+  echo Usage: infxt table {db}
+  return
+fi
+
+mydb=${2:-sacbeta}
+
+cat <<eof | COLUMNS=132 dbaccess $mydb
+
+SELECT colno, colname FROM syscolumns C, systables T WHERE C.tabid =
+T.tabid AND T.tabname = '$1'
+ORDER BY 1
+;
+eof
