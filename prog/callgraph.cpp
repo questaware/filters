@@ -12,10 +12,10 @@ using namespace std;
 const vector<string> empty_vec;
 
 struct Descr
-{ int              callct;
-  bool             printed;
-  int		   pyr_size;
-  vector<string>   calls;
+{ int             callct;
+  bool            printed;
+  int		   				pyr_size;
+  vector<string>  calls;
   
   Descr();
 };
@@ -99,7 +99,7 @@ int main (int argc, char * argv[])
         arg2 = lnn;
         for ( ; *++lnn != 0 && !isspace(*lnn); )
           ;
-	*lnn = 0;
+				*lnn = 0;
       }
     }
 
@@ -179,7 +179,7 @@ int main (int argc, char * argv[])
     { if (p->second->callct == 0 && !p->second->printed 
        && p->second->pyr_size > hval)
       { hval = p->second->pyr_size;
-	top = p;
+				top = p;
       }
     }
 

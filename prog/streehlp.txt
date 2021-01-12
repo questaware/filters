@@ -1,10 +1,12 @@
-ll { options } { directory }*                 Version 1.05
+ll { options } { directory }*                 Version 1.06
          -\\       -- Use \\ as separator
          -f        -- read these options from stdin
          @v        -- read these options from environment variable v
         -@{@}{file}-- read filenames {any names} from stdin {file}
        -o{12} file -- redirect output
-ACTIONS: -i        -- Ask about each entry
+ACTIONS: 
+	 -a	   -- Prefix output with Grep pattern
+	 -i        -- Ask about each entry
          -{SVlL}   -- No trailing /, very Verbose, long, very long
          -v{v}{123}-- verbose, show # lines
          -q        -- shorten names where possible
@@ -12,7 +14,7 @@ ACTIONS: -i        -- Ask about each entry
          -#        -- Count
   -{cC}{?b}{v} dir -- Compare to dir/file (C:verbose)(?:if there)(blanks)(v:diff)
          -d{y}     -- Delete {no confirm}
-     -{e|p} pat    -- command to execute/print; %s: whole,%t: tail
+  -{e|p|pe} pat    -- command to execute/print; %s: whole,%t: tail
          -T	    -- Change diectory to the leaves
 SELECTION CONDITIONS or'd:
       -{-+01234}   -- Show directories first, last, recurse to level n

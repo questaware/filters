@@ -1,0 +1,2 @@
+C:\gener\tools\prog\wincon\vs2019\popen\Debug\popen.exe
+C:\gener\tools\prog\wincon\vs2019\popen\Debug\popen.pdb

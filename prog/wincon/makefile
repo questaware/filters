@@ -25,7 +25,8 @@ LK=link
 LIB :=C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\LIB;C:\Program Files\Microsoft Visual Studio .NET 2003/Vc7/PlatformSDK/Lib;C:\Program Files\Intel\Compiler\Fortran\9.1\IA32\lib;$(ORACLE_HOME)/precomp/lib
 export LIB
 
-Path :=C:\bin;C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\bin;C:\bin;C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\lib;c:/program files/Microsoft Visual Studio .NET 2003/Common7/IDE/;C:\Program Files\Intel\Compiler\Fortran\9.1\IA32\bin;.;c:\WINDOWS;c:\msys\1.0\bin
+C_HOME=C:\Program Files (x86)\Microsoft Visual Studio\VC98
+Path :=c:/bin;$(C_HOME)/bin;$(C_HOME)/lib;$(C_HOME)/../Common/msdev98/bin/;\
 export Path
 
 all: ll.exe
