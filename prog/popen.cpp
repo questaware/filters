@@ -367,15 +367,19 @@ void mbwrite(const char * msg)
 
 
 
-void flagerr(const char * fmt)
+int flagerr(const char * fmt)
 
 { DWORD ec = GetLastError();
 	fprintf(stderr, fmt, ec);
+	return ec;
 }
 
 
-void ErrorMessage(const char *str)  //display detailed error info
-{	LPVOID msg;
+int ErrorMessage(const char *str)  //display detailed error info
+
+{
+#if _DEBUG
+	LPVOID msg;
   FormatMessage(
               FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
               NULL,
@@ -387,7 +391,14 @@ void ErrorMessage(const char *str)  //display detailed error info
                );
 	fprintf(stderr, "%s: %s\n",str, (const char*)msg);
   LocalFree(msg);
+	mbwrite(NULL);
+	return -1;
+#else
+	char buf[100];
+	return -flagerr(strcat(strcpy(buf,str)," %d\n"));
+#endif
 }
+
 
 
 void setMyConsoleIP()
@@ -426,29 +437,36 @@ class Pipe
 	 Cc WinLaunch(Cc & sysRet, CmdMode flags,
 							  const char *app = nullptr, const char * ca = nullptr, 
       			    const char * in_data = nullptr, 
-      			    HANDLE ip = 0, const char *outfile = 0); 		// char *outErr,
+      			    const char *infile = nullptr, const char *outfile = nullptr);
 };
 
 Cc Pipe::WinLaunch(Cc & sysRet, CmdMode flags,
 									 const char *app, const char * ca, 
 				      	   const char * in_data, 
-				      	   HANDLE ip, const char *outfile)	// char *outErr,
+				      	   const char *infile, const char *outfile)	// char *outErr,
 { char buff[1024];           //i/o buffer
-	const char * fapp = app == nullptr ? nullptr : flook('P', app);
+	const char * fapp = NULL;
+	if (app != NULL)
+	{ int ct = 2;
+		char * app_ = (char*)app;
+		
+		while ((fapp = flook('P', app_)) == NULL && --ct > 0)
+			app_ = strcat(strcpy(buff, app_), ".exe");
+	}
 	
-	if      (fapp != nullptr)					// never use comspec
+	if      (fapp != NULL)					// never use comspec
 		app = fapp;
 	else if (flags & WL_SHELL)
 	{	const char * comSpecName = (char*)getenv("COMSPEC");
-		if (comSpecName == nullptr)
+		if (comSpecName == NULL)
 			comSpecName = "cmd.exe";
 
-		if (ca == nullptr)
-		{ app = nullptr;
+		if (ca == NULL)
+		{ app = NULL;
 			ca = comSpecName;
 		}
 		else									/* Create the command line */
-		{ int len = strlen(concat(buff," /c \"", app == nullptr ? "" : app,0));
+		{ int len = strlen(concat(buff," /c \"", app == NULL ? "" : app,0));
 			char * dd = buff+len;
 			char ch;
 			char prev = 'A';
@@ -478,18 +496,19 @@ Cc Pipe::WinLaunch(Cc & sysRet, CmdMode flags,
 	if (app != NULL && ca != NULL && ca[0] != ' ')
 		return -1000;
 
-{ int use_data = ip != 0 || in_data != nullptr;
-	HANDLE newstdin = ip;								//pipe handles
-  HANDLE newstdout = 0;
+{ char	dummyInFile[NFILEN] = ""; 		// Dummy input file
+	HANDLE newstdout = 0;								// pipe handles
   HANDLE write_stdin = 0;
   HANDLE read_stdout = 0;
+	Cc wcc = OK;
   STARTUPINFO si;
 //SECURITY_DESCRIPTOR sd;               //security information for pipes
   PROCESS_INFORMATION pi;
   SECURITY_ATTRIBUTES sa;
   sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-  sa.lpSecurityDescriptor = nullptr;
+  sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;         //allow inheritable handles
+	pi.hProcess = 0;
 
 //memset(&pi, 0, sizeof(pi));
 	memset(&si, 0, sizeof(si));
@@ -499,86 +518,60 @@ Cc Pipe::WinLaunch(Cc & sysRet, CmdMode flags,
 	{ si.dwFlags |= STARTF_USESHOWWINDOW;
 	  si.wShowWindow = SW_SHOWNORMAL;
 	}
-
-	if (flags & WL_SPAWN)
-	{	if (CreatePipe(&read_stdout,&newstdout,&sa,0))  //create stdout pipe
-			mbwrite("Created RSO");
-		else
-	  {	ErrorMessage("CreatePipe");
-	   	return -1001;
-	  }
-	
-		if (CreatePipe(&newstdin,&write_stdin,&sa,0))   //create stdin pipe
-			mbwrite("Created WSO");
-		else
-		{	ErrorMessage("CreatePipe");
-		 	CloseHandle(newstdout);
-		 	CloseHandle(read_stdout);
-	 	 	return -1000;
-  	}
-
-// 	GetStartupInfo(&si);      //set startupinfo for the spawned process
-		si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
-	  si.wShowWindow = SW_HIDE;
-	  si.hStdOutput = newstdout;
-	  si.hStdError = newstdout;     //set the new handles for the child process
-	  si.hStdInput = newstdin;
-//  si.lpTitle = "Emsub";
-#if 0
-		if (si.hStdOutput != 0)
-		{	HANDLE cur_proc = GetCurrentProcess();
-								 
-			BOOL s = DuplicateHandle(cur_proc,si.hStdOutput,
-															 cur_proc,&si.hStdError,0,TRUE,
-															 DUPLICATE_SAME_ACCESS) ;
+							  
+	if (!(flags & WL_SPAWN))
+	{ if ((flags & WL_NOIHAND) == 0)
+		{	const char * ifn = infile == NULL ? "nul" : infile;
+			si.hStdInput = strcmp(ifn, "StdIn") == 0 ? GetStdHandle(STD_INPUT_HANDLE) :
+														 CreateFile(ifn,
+														 						GENERIC_READ,FILE_SHARE_READ,NULL,
+																				OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
 		}
-	  // mbwrite("IHAND");
-#endif	  
-	  flags |= WL_IHAND;
-	}
-	else
-	{	if (si.hStdInput <= 0 && !use_data && (flags & WL_NOIHAND) == 0)
-		{ char	dummyInFile[NFILEN] ; 						 /* Dummy input file */
-			newstdin = CreateF(dummyInFile);
-			si.hStdInput = newstdin;
-		}
-		if (si.hStdOutput <= 0 && outfile)
-		{	
-			newstdout = CreateFile(outfile,GENERIC_WRITE,FILE_SHARE_WRITE,&sa,
-																CREATE_ALWAYS,FILE_ATTRIBUTE_TEMPORARY,nullptr);
-			si.hStdOutput = newstdout;
+		if (outfile != NULL)
+		{	si.hStdOutput = CreateFile(outfile,GENERIC_WRITE,FILE_SHARE_WRITE,&sa,
+																 CREATE_ALWAYS,FILE_ATTRIBUTE_TEMPORARY,NULL);
 			if (si.hStdOutput < 0)
-				fprintf(stderr,"CFOut Failed\n");
+				mbwrite("CFOut Failed");
 		}
 		if (si.hStdInput > 0 || si.hStdOutput > 0)
 			si.dwFlags |= STARTF_USESTDHANDLES;
 	}
+	else
+	{	if (!CreatePipe(&read_stdout,&newstdout,&sa,0))  //create stdout pipe
+	  	return -1000 + ErrorMessage("CreatePipe");
+	
+		if (!CreatePipe(&si.hStdInput,&write_stdin,&sa,0))   //create stdin pipe
+			wcc = -2000 + ErrorMessage("CreatePipe");
+		else
+		{ // mbwrite("Created WSO");
 
-	if (v_opt)
-  {	printf(app == nullptr ? "<no app>" : "%s\n", app);
-		printf(ca == nullptr ? "<no args>" : "%s\n", ca);
-		printf("%s\n", int_asc((int)si.hStdOutput));
+// 		GetStartupInfo(&si);      //set startupinfo for the spawned process
+			si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+		  si.wShowWindow = SW_HIDE;
+		  si.hStdOutput = newstdout;
+		  si.hStdError = newstdout;     //set the new handles for the child process
+//	  si.lpTitle = "Emsub";
+#if 0
+			if (si.hStdOutput != 0)
+			{	HANDLE cur_proc = GetCurrentProcess();
+									 
+				BOOL s = DuplicateHandle(cur_proc,si.hStdOutput,
+																 cur_proc,&si.hStdError,0,TRUE,
+																 DUPLICATE_SAME_ACCESS) ;
+			}
+	  // mbwrite("IHAND");
+#endif	  
+	  }
+	  flags |= WL_IHAND;
 	}
-															  //spawn the child process
-  if (!CreateProcess(app,
-                     (char*)ca,
-                     nullptr,nullptr,
-										 (flags & WL_IHAND),
-                		 flags & (WL_CNPG+WL_CNC),
-                     nullptr,nullptr,&si,&pi))
-  { ErrorMessage("CreateProcess");
-    if (newstdin != 0) CloseHandle(newstdin);
-    if (newstdout != 0) CloseHandle(newstdout);
-    if (read_stdout != 0) CloseHandle(read_stdout);
-    if (write_stdin != 0) CloseHandle(write_stdin);
-    return -1002;
-  }
-  
-	CloseHandle(pi.hThread);
 
-{	DWORD exit = 0;  			//process exit code
-  DWORD bread;  //bytes read
-  DWORD avail;  //bytes available
+//mbwrite(app == NULL ? "<no app>" : app);
+//mbwrite(ca == NULL ? "<no args>" : ca);
+//mbwrite(int_asc((int)si.hStdOutput));
+
+{	DWORD exit = STILL_ACTIVE;  			//process exit code
+  DWORD bread = 0, bwrote = 0;  		//bytes read/written
+  DWORD avail;  										//bytes available
   int got_ip = 0;
   int clamp = 4;
   int iter = 0;
@@ -586,178 +579,209 @@ Cc Pipe::WinLaunch(Cc & sysRet, CmdMode flags,
 	int sct = 6;
  	int sentz = 0;
 
-	if (!(flags & WL_SPAWN))
-	{
+	if      (wcc != OK)
+		;
+  else if (!CreateProcess(app,					//spawn the child process
+                    			(char*)ca,
+                    			NULL,NULL,
+													(flags & WL_IHAND),
+                					flags & (WL_CNPG+WL_CNC),
+                    			NULL,NULL,&si,&pi))
+	{	pi.hProcess = 0;
+  	wcc = -3000 + ErrorMessage("CreateProcess");
+  }
+	else
+	{	CloseHandle(pi.hThread);
+  
+		if (!(flags & WL_SPAWN))
+		{
 //  int ct = 200000;
-		for (;;)
-		{ DWORD procStatus = WaitForSingleObject(pi.hProcess, 200);
-			if (procStatus == WAIT_TIMEOUT)
-			{ // millisleep(100);
+			for (;;)
+			{ DWORD procStatus = WaitForSingleObject(pi.hProcess, 200);
+				if (procStatus == WAIT_TIMEOUT)
+				{ // Sleep(100);
 //			if (--ct >= 0)
-//			if (!typahead() /* && (TTbreakFlag != 0)*/) 
-//				continue;
-			}
-		{ Cc cc = (procStatus != WAIT_FAILED);
-			if (cc)
-			{ cc = GetExitCodeProcess(pi.hProcess,&exit);
-			  if (cc == 0)
-			  	flagerr("GECP %d");
-				else
-				{ // mbwrite("Exitting");
-					break;
+					if (!_kbhit() /* && (TTbreakFlag != 0)*/) 
+						continue;
 				}
-			}
-		}}
-		mbwrite("Exit Whole");
-	}
-	else 
-	{ char fbuff[512];
-		char lbuff[512];
-		const char * ipstr = in_data == nullptr ? "" : in_data;
-  	FILE * op = outfile == nullptr ? NULL_OP : fopen(outfile, "w");
-  	int append_nl = *ipstr != 0;
-		
-		if (read_stdout == 0)
-		{ mbwrite("Int Err");
-			return -1;
+			{ Cc cc = (procStatus != WAIT_FAILED);
+				if (cc)
+				{ cc = GetExitCodeProcess(pi.hProcess,&exit);
+				  if (cc == 0)
+				  	flagerr("GECP %d");
+					else
+					{//mbwrite("Exitting");
+						break;
+					}
+				}
+			}}
+			
+			//mbwrite("Exit Whole");
+//		if (dummyInFile[0] != 0)
+//			unlink(dummyInFile);
 		}
+		else 
+		{ char fbuff[512];
+			union 
+			{ int	 i[64];
+				char buf[512];
+			} l;
+			FILE * ip = infile == NULL 							 ? NULL : 
+									strcmp(infile, "StdIn") == 0 ? stdin : fopen(infile, "r");
+	  	FILE * op = outfile == NULL ? NULL_OP : fopen(outfile, "w");
+			const char * ipstr = in_data == NULL ? "" : in_data;
+	  	int append_nl = *ipstr != 0;
+	  	int std_delay = 10;
+	  	int delay = 0;
+			
+			if (read_stdout == 0)
+			{ mbwrite("Int Err");
+				return -1;
+			}
 
-	  for(;;++iter)      //main program loop
-	  { Sleep(250);
-	  { Cc cc = PeekNamedPipe(read_stdout,buff,1023,&bread,&avail,nullptr);
-		  if      (cc == 0)
-	  	 	flagerr("PNP %d");
-	  	else
-	  	{	//mbwrite(int_asc(avail+10000));
-	                        //check to see if there is any data to read from stdout
-		  	if (bread != 0)
-	  		{ int done = 0;
+		  for(;;++iter)      //main program loop
+		  {	(void)Sleep(delay);											//check for data on stdout
+		  	delay = std_delay;
+		  {	Cc cc = PeekNamedPipe(read_stdout,buff,2,&bread,&avail,NULL);
+			  if (!cc)
+		  	 	flagerr("PNP %d");
+				if (bread == 0)
+		  	{ 
+	  			if (exit == STILL_ACTIVE)
+					{ cc = GetExitCodeProcess(pi.hProcess,&exit); //while process exists
+				    if 			(!cc)
+				    {	flagerr("GECP %d");
+				    	if (--clamp <= 0)
+				    		break;
+				    }
+	  				else if (exit != STILL_ACTIVE)
+	  					break;
+	  			}
+	  		}
+	  		else
+	  		{ DWORD done = 0;
 	  			buff[bread] = 0;
-//  			mbwrite(buff);
-	    	  while (done < (int)avail)
-	    	  {	cc = ReadFile(read_stdout,buff,1023,&bread,nullptr);
+//	  		mbwrite(buff);
+	    	  while (done < avail)
+	    	  {	cc = ReadFile(read_stdout,buff+done,1023-done,&bread,NULL);
 					  if (cc == 0)
 	  				{	flagerr("PNP %d");
 	    	 			break;
 	    	 		}
+	    		  done += bread;
+	    		  buff[done] = 0;
 	    	 		if (bread == 0)
 	    	 			break;
-	    		  done += bread;
-	    		  buff[bread] = 0;
 						got_ip = 1;
-	  		    if      (op != nullptr)
+	  		    if (op != NULL)
 	  		      fputs(buff, op);
-	  		    else if (v_opt)
-							printf("In: %s",buff);
+//						printf("In: %s",buff);
 	   			}
-	   		}
-			}
-	  	cc = GetExitCodeProcess(pi.hProcess,&exit); //while the process is running
-	    if (cc == 0)
-	    {	flagerr("GECP %d");
-	    	if (--clamp <= 0)
-	    		break;
-	    }
-	    else if (exit != STILL_ACTIVE)
-	    { mbwrite(int_asc(exit));
-	      break;
-	    }
-
-			if (sentz && iter > 10)		// 4 seconds
-			{ if (--sentz <= 0)
-				{ sentz = 1;
-					break;
 				}
-				continue;
-			}
 
-			mbwrite("Testing");
-
-	    if ((flags & WL_AWAIT_PROMPT) && !got_ip && !_kbhit())
-	      continue;
-
-			mbwrite("Getting");
-
-			if (*ipstr == 0)
-	    {	if (ip != 0)
-		    { unsigned long rct;
-		    	cc = ReadFile(ip,fbuff,sizeof(fbuff)-1,&rct,nullptr);
-					if (cc == 0)
-						ip = 0;
-					else
-					{ ipstr = fbuff;
-						fbuff[rct] = 0;
+				if (sentz)
+				{ if (--sentz <= 0)
+					{ --sentz;
+						break;
 					}
+					continue;
 				}
-			}
-		{	int sl = *ipstr;
-			if (sl != 0)
-	    { char * ln = lbuff-1;
-	    	--ipstr;
-	      while (*++ipstr != 0 && *ipstr != '\r' && *ipstr != '\n')
-	        *++ln = *ipstr;
 
-				if (*ipstr == '\r' && ipstr[1] == '\n')
-					++ipstr;
-	      if (*ipstr != 0)
-	      	*++ln = *ipstr++;
-	      else
-	      {	*++ln = '\n';
-	      	mbwrite("Ends");
-	      }
-	      sl = ln + 1 - lbuff;
-		    if (sl > 1)
-		   	{ if      (lbuff[sl-1] == 'Z' - '@')
-		   			sentz = 8;
-		    	else if (lbuff[sl-1] != '\n' && append_nl)
-			    { lbuff[sl++] = '\n';
-				   	append_nl = 0;
-	  	  	}
+		    if ((flags & WL_AWAIT_PROMPT) && !got_ip && !_kbhit())
+		      continue;
+
+				//mbwrite("Getting");
+
+//			if (ipstr == 0)
+//				continue;
+
+				if (*ipstr == 0)
+		    {	if (ip != 0)
+			    { ipstr = fgets(&fbuff[0], sizeof(fbuff)-1-bwrote, ip);
+			    	if (ipstr == NULL)
+			    	{	if (ip != stdin)
+			    			fclose(ip);
+			    		ip = NULL;
+			    		ipstr = "";
+							continue;
+						}
+			    }
 				}
-	    }
-	    
-	    if (sl == 0 && sentz == 0)
-	    { sentz = 8;
-	    	lbuff[sl++] = 'Z' -'@';
-	      mbwrite("Z");
-	    }
+			{	int sl = *ipstr;
+				if (sl != 0)
+		    { char * ln = l.buf-1+bwrote;
+		    	--ipstr;
+		      while (*++ipstr != 0 && *ipstr != '\r' && *ipstr != '\n')
+		        *++ln = *ipstr;
+
+					if (*ipstr == '\r' && ipstr[1] == '\n')
+						++ipstr;
+		      if      (*ipstr != 0)
+		      	*++ln = *ipstr++;
+		      else if (ip == 0)
+		      {	*++ln = '\n';
+		      	//mbwrite("Ends");
+		      }
+		      sl = (ln - l.buf) + 1;
+			    if (sl > 0 && append_nl)
+			    {	if (l.buf[sl-1] != '\n')
+				    { l.buf[sl++] = '\n';
+					   	append_nl = 0;
+		  	  	}
+					}
+		    }
+		   	if (!sentz && sl == 0 || l.buf[sl-1] == 'Z' - '@')
+			  {	if (!sentz)
+			  		l.buf[sl++] = 'Z' -'@';
+			  	std_delay = 100;
+			  	sentz = 4000 / 100;			// Wait 4 seconds
+		   	}
 #if 0
-	    --sct;
-			if (sct >= 0)
-		  {	char sch = lbuff[sl];
-		    lbuff[sl] = 0;
-		  	mlwrite("Sending %d %x %s",sl, lbuff[sl-1], lbuff);
-				mbwrite(lastmesg);
-		    lbuff[sl] = sch;
-		  }
+		    --sct;
+				if (sct >= 0)
+			  {	char sch = l.buf[sl];
+			    l.buf[sl] = 0;
+			  	mlwrite("Sending %d %x %s",sl, l.buf[sl-1], l.buf);
+					mbwrite(NULL);
+			    l.buf[sl] = sch;
+			  }
 #endif
-	    cc = WriteFile(write_stdin,lbuff,sl,&bread,nullptr); //send it to stdin
-	    if (cc == 0)
-		  	ErrorMessage("WriteFile");
-//	  else
-//	  {	mlwrite("Sent %d",bread);
-//			mbwrite(lastmesg);
-//		}		  
-
-			lbuff[0] = 0;						// Conceal data
-			lbuff[1] = 0;
-			lbuff[2] = 0;
-    }}}
-		if (op != NULL_OP)
-			fclose(op);
+		    cc = WriteFile(write_stdin,l.buf+bwrote,sl,&bwrote,NULL); //send to stdin
+		    if (cc == 0)
+			  	wcc = -4000 + ErrorMessage("WriteFile");
+			  else
+			  {	if (sl - bwrote > 0)
+				  {	l.buf[sl] = 0;
+			  		strpcpy(l.buf, l.buf+bwrote, sizeof(l.buf));
+			  	}
+			  	bwrote = sl - bwrote;
+//		  	mlwrite("Sent %d",bread);
+//				mbwrite(lastmesg);
+				}		  
+				l.i[0] = 0;						// Conceal password data
+				l.i[1] = 0;
+				l.i[2] = 0;
+	    	//delay = STD_DELAY;
+	    }}}
+			if (ip != NULL && ip != stdin)
+				fclose(ip);
+			if (op != NULL_OP)
+				fclose(op);
+		}
 	}
   
 //printf("Exitted %d\n", exit);
   
   CloseHandle(pi.hProcess);
-  CloseHandle(newstdin);            //clean stuff up
-  CloseHandle(newstdout);
+  CloseHandle(si.hStdInput);
+  CloseHandle(si.hStdOutput);
   CloseHandle(read_stdout);
   CloseHandle(write_stdin);
 	setMyConsoleIP();
 
-  sysRet = sentz ? -1 : (Cc)exit;
-  return sentz ? -1 : OK;
+  sysRet = sentz < 0 ? -1 : (Cc)exit;
+  return wcc != OK ? wcc :
+  			 sentz < 0 ? -1  : OK;
 }}}
 
 
@@ -768,7 +792,7 @@ Cc Pipe::WinLaunch(Cc & sysRet, CmdMode flags,
 void explain(void)
 
 { fputs(
- "launch [-wh # | -f #] [-p app] [-a args] [-d data] [-i [file]] [-o file]\n"
+ "popen [-wh # | -f #] [-p app] [-a args] [-d data] [-i [file]] [-o file]\n"
  "    -wh #     Which command mode\n"
  "    -f  #     command mode\n"
  "    -p  app   App\n"
@@ -776,7 +800,12 @@ void explain(void)
  "    -d  data  Data to pipe in\n"
  "    -o  file  File to receive output\n"
  "    -i [file] (Also)take data from stdin\n"
- "    -v        Verbose\n", stdout);
+ "    -v        Verbose\n"
+ "Try\n"
+ " -wh 1 -p pscp -a \" guest@host:shared/message.txt .\" -v -d Password\n"
+ " -wh 2\n"
+ " -wh 3 -p sed -a \" -e s/m/M/\" -i\n"
+ " -wh 4 -a \" dir\" -o dir.dat\n", stdout);
     exit(0);
 }
 
@@ -789,7 +818,12 @@ int Pipe::menu[4]= { (int)(WL_SPAWN | WL_CNC | WL_AWAIT_PROMPT),
 
 int main(int argc, char **argv)
 
-{ if (argc <= 1)
+{	char modulename[129];
+	HINSTANCE hInstance = GetModuleHandle(NULL);	 // Grab An Instance For Window
+	GetModuleFileName(hInstance, modulename, sizeof(modulename)-1);
+	flook_init(modulename);
+
+	if (argc <= 1)
   { explain();
   }
   
@@ -860,13 +894,10 @@ int main(int argc, char **argv)
 		else
 			f_opt = Pipe::menu[wh_opt - 1];
 
-	HANDLE ip = infile != nullptr
-									? CreateFile(infile,GENERIC_READ,FILE_SHARE_READ,nullptr,
-																OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr) :
-							usestdin_opt ? GetStdHandle( STD_INPUT_HANDLE ) :
-														0;
+	char * inFile = infile != nullptr ? infile  :
+									usestdin_opt			? "StdIn" : nullptr;
 	Cc rc;
-	Cc cc = Pipe::WinLaunch(rc, f_opt, app, args, indata, ip, outfile);
+	Cc cc = Pipe::WinLaunch(rc, f_opt, app, args, indata, inFile, outfile);
 	if (cc == -1)
 		printf("Gave up\n");
 	else
