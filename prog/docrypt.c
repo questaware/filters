@@ -25,7 +25,7 @@ Char * cryptkey = null;
 
 
 
-private void explain()
+static void explain()
 
 { puts("docrypt { -k | +k | -l } key {dir|filename}*\n");
 }
@@ -170,13 +170,13 @@ void main(argc, argv)
     
       while (not isd or (fn = msd_nfile(&trash)) != null)
       { Char * cell = malloc(strlen(fn)+5);
-	if (cell != null)
-	{ *(Char **)cell = worklst;
-	  worklst = cell;
-	  strcpy(&cell[sizeof(char *)], fn);
-	}
-	if (not isd)
-	  break;
+				if (cell != null)
+				{ *(Char **)cell = worklst;
+				  worklst = cell;
+				  strcpy(&cell[sizeof(char *)], fn);
+				}
+				if (not isd)
+				  break;
       }
       
       for (; worklst != null; worklst = *(Char**)worklst)
@@ -189,7 +189,7 @@ void main(argc, argv)
           --fn_;
         strcpy(&opfname[0], fn);
 	
-	eprintf(stderr, "Doing %s\n", fn);
+				eprintf(stderr, "Doing %s\n", fn);
 
         strcpy(&opfname[fn_ - fn], "1q7w6s");
         if (chan == null)
@@ -207,37 +207,36 @@ void main(argc, argv)
               offp = op;
            
               while (true)
-  	      { int len;
-  	        int s = ffgetline(&len);
-  	        if (s != FIOSUC)
-  	          break;
+		  	      { int len;
+		  	        int s = ffgetline(&len);
+		  	        if (s != FIOSUC)
+		  	          break;
 #if	CRYPT
 					/* terminate and decrypt the string */
-		if (decr)
-	          crypt(fline, strlen(fline));
+								if (decr)
+	  		    	    crypt(fline, strlen(fline));
 #endif
-  	        if (listout)
-  	          eprintf(null, "%s\n", fline);
-  	        else
-  	        { s = ffputline(fline, len, encr);
-  	          if (s != FIOSUC)
-  	            break;
-  	        }
-	      }
-            }
-            fclose(op);
-	    if (not listout)
-  	    { eprintf(&ipline[0], "del %s", fn);
-	      system(ipline);
-	      eprintf(&ipline[0], "ren %s %s", opfname, fn);
-	      system(ipline);
-	    }
-          }
+  	    		    if (listout)
+		  	          eprintf(null, "%s\n", fline);
+  			        else
+  	    		    { s = ffputline(fline, len, encr);
+		  	          if (s != FIOSUC)
+			 	            break;
+  	  		      }
+		      		}
+						}
+	          fclose(op);
+				    if (not listout)
+			 	    { eprintf(&ipline[0], "del %s", fn);
+				      system(ipline);
+		  		    eprintf(&ipline[0], "ren %s %s", opfname, fn);
+				      system(ipline);
+		  		  }
+  	      }
           fclose(chan);
         }
       }
-    }
+		}
     ++argv_;
   }
-
 }}

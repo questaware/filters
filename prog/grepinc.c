@@ -25,7 +25,7 @@ char lbuff[LNSZ+1];
 Char * invokenm;
 
 
-private void explain()
+static void explain()
 
 { fprintf(stderr, "grepinc {-c cmd } {-I diry}* fname\n"
 		  "   -c cmd      -- Use cmd for cc\n"

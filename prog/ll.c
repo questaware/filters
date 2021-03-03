@@ -1,11 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <time.h>
 #include <errno.h>
 
@@ -26,6 +27,14 @@
 #endif
 
 #include "build.h"
+#if S_MSDOS
+#include <io.h>
+#include <direct.h>
+#define GetCwd _getcwd
+#else
+#include <unistd.h>
+#define GetCwd getcwd
+#endif
 #if S_MSDOS
 /*#include <io.h>*/
 #define msd_isslink() 0
@@ -52,6 +61,8 @@ extern Short grabchar();				/* from fip.c */
 extern FILE * splitip();				/* from fip.c */
 extern void serialclose();
 
+extern short shellprog(char * cmd);		/* from msexec.c */
+extern Cc erase_file(const Char* s,Char wh);/* from msera.c */
 
 #define M_VERBOSE 1
 #define M_SKIPSP  2
@@ -86,7 +97,6 @@ typedef struct Patcell_s
   Byte props[4] = {0};
 
   Bool split_needed = false;
-  Vint a_opt = false;
   Vint at_opt = 0;
   Char * at_fn = NULL;
   Bool i_opt = false;
@@ -106,7 +116,6 @@ typedef struct Patcell_s
   Char * e_fmt[NO_FMT] = { "" };
   Short e_fmt_ix = 0;
   Patcell gr_pat = null;
-  char * gr_first = null;
   Vint gr_and = 0;		/* count of gr and's */
   Patcell re_exp = null;
   Vint re_and = 0;		/* count of re and's */
@@ -162,8 +171,8 @@ static void explain(void)
     { int ip = open(afn, O_RDONLY);
       if (ip > 0)
       { Vint ct;
-	while ((ct = read(ip, &cmd_line[0], sizeof(cmd_line))) > 0)
-	  write(1, cmd_line, ct);
+				while ((ct = read(ip, &cmd_line[0], sizeof(cmd_line))) > 0)
+				  write(1, cmd_line, ct);
       }
     }
 }
@@ -208,9 +217,6 @@ void add_cell(Patcell * list_ref,
   if (str == null)
     explain();
 
-	if (gr_first == NULL)
-		gr_first = str;
-
 #if S_MSDOS
   if (list_ref == &gr_pat)
   { char * t;
@@ -219,6 +225,7 @@ void add_cell(Patcell * list_ref,
         *t = '^';
   }
 #endif
+
 
 { Patcell pcell = (Patcell)malloc(sizeof(Patcell_t)+len);
   if (pcell != null)
@@ -407,7 +414,7 @@ static void doit(
     { d_opt = 2;
       msg_str("Press d to delete files", "");
       if ((grabchar() | 0x20) != 'd')
-				myexit(0);
+	myexit(0);
     }
     if (i_opt == 1)
     { fputserr("Y, y, o, CR confirms one, SP all, ^A-Z quits\r\n");
@@ -424,12 +431,12 @@ static void doit(
       else if (ch == A_CR or ch == A_LF or
 	       ch == 'Y'  or ch == 'y'	/*or ch == 'o'*/)
 
-	;
+				;
       else if (ch <= 'Z' - '@')
       { myexit(0);
       }
       else
-	return;
+				return;
     }
   }
   
@@ -464,29 +471,29 @@ static void doit(
       { strcpy(&cmp_file[0], cmp_dir);
         ch = cmp_file[cmp_dirl_-1];
         if (ch != '/'  and
-	    ch != '\\' and
-	    ch != ':')
-	  cmp_file[cmp_dirl_++] = sep_ch;
+				    ch != '\\' and
+				    ch != ':')
+				  cmp_file[cmp_dirl_++] = sep_ch;
         strcpy(&cmp_file[cmp_dirl_], &eny[leny]);
 #if 0
         eprintf((char*)stderr, "Comparing %s %s\n", sheny, cmp_file);
 #endif
 #if 0
         if (strlen(cmp_file) >= tln)
-	  fputserr("INT Err");
+				  fputserr("INT Err");
 #endif
       { extern Cc same_files(char *, char *, Vint);
         Cc dc = same_files(eny, cmp_file, verb_comp);
         free(cmp_file);
         if      (dc == OK)
         { if (v_opt)
-	    msg_str("Same ", sheny);
-	  same_ct += 1;
-	  return;
+				    msg_str("Same ", sheny);
+				  same_ct += 1;
+				  return;
         }
         else 
         { if      (dc == 1)
-	  { diff_ct += 1;
+				  { diff_ct += 1;
           }
           else if (dc == -1)
           { eprintf(null, "Cannot read file %s\n", eny);
@@ -519,83 +526,83 @@ static void doit(
       else
       {
 #if S_MSDOS == 0 | S_WIN32
-      bn = strrchr(eny, '/');
-      if (bn == null)
+      	bn = strrchr(eny, '/');
+	      if (bn == null)
 #endif
-        bn = eny-1;
-      }
+  	      bn = eny-1;
+    	  }
     /*printf("Grep: %s\n", bn+1);*/
-    { FILE * ip = fopen(bn+1, "r");
-      if (ip == null)
-      { if (vv_opt)
-				{ char cwdb[160];
-          eprintf(null, "CWD %s Cannot read %s\n", getcwd(cwdb, 159), bn+1);
-          eprintf((char*)stderr, "Cannot read %s\n", bn+1);
-        }
-        cc = HALTED;
-      }
-      else
-      { char blank[31];
-        char filename[132];
-        strcpy(filename,sheny);
-        if (g_one_suff)
-        { cc = strlen(filename);
-          while (--cc > 0 && filename[cc] != '.')
-            ;
-          if (cc > 0) filename[cc] = 0;
-        }
-        memset(blank,' ',30);
-        blank[30] = 0;
+	    { FILE * ip = fopen(bn+1, "r");
+  	    if (ip == null)
+	      { if (vv_opt)
+					{ char cwdb[160];
+  	        eprintf(null, "CWD %s Cannot read %s\n", GetCwd(cwdb, 159), bn+1);
+    	      eprintf((char*)stderr, "Cannot read %s\n", bn+1);
+     			}
+	        cc = HALTED;
+  	    }
+    	  else
+	      { char blank[31];
+	        char filename[132];
+	        strcpy(filename,sheny);
+	        if (g_one_suff)
+	        { cc = strlen(filename);
+	          while (--cc > 0 && filename[cc] != '.')
+	            ;
+	          if (cc > 0) filename[cc] = 0;
+	        }
+	        memset(blank,' ',30);
+	        blank[30] = 0;
 
         /*eprintf(null, "GREPF\n");*/
       
-        for (pcell = gr_pat;	pcell != null;  pcell = pcell->next)
-				  pcell->props &= ~M_MARK;
+	        for (pcell = gr_pat;	pcell != null;  pcell = pcell->next)
+					  pcell->props &= ~M_MARK;
 
-        while (v_opt or ct_opt or occ_ct == 0)
-        { Char * ln = ffgetline(&linebuf, ip);	/* For each line */
-				  if (ln == null)
-				    break;
+	        while (v_opt or ct_opt or occ_ct == 0)
+	        { Char * ln = ffgetline(&linebuf, ip);	/* For each line */
+					  if (ln == null)
+					    break;
 
-				  for (pcell = gr_pat; pcell != null;  pcell = pcell->next)
-				  { if ((pcell->props & M_AND) and and_res < 0)
-				      and_res = true;
-				    cc = grep_line(ln, pcell->c, (Byte)(pcell->props&~(M_MARK+M_SIMPLE)));
-				    if (cc == OK)
-				    { pcell->props |= M_MARK;
-				      if (pcell->props & M_NOT)
-				      { if (pcell->props & M_AND) 
-				          and_res = false;
-				      }
-				      else
-				      { if ((pcell->props & M_AND) == 0)
-				        { occ_ct += 1;
-								  or_res = true;
-								  if (v_opt)
-								  { while (*ln == ' ' || *ln == 9)
-								      ++ln;
-								    eprintf(null, "%s:	%s\n", filename, ln);
-								    if (v_opt > 1)
-								    { int sp = strlen(filename);
-								      if (sp > 30) sp = 30;
-								      cc = v_opt;
-								      while (--cc > 0)
-								      { Char * ln = ffgetline(&linebuf, ip);
-							          if (ln == null)
-							            break;
-								        while (*ln == ' ' || *ln == 9)
-								          ++ln;
-								        eprintf(null, "%s:	%s\n", &blank[30-sp], ln);
-								      }
-								    }
-								  }
-								  break;
-								}
+					  for (pcell = gr_pat; pcell != null;  pcell = pcell->next)
+					  { if ((pcell->props & M_AND) and and_res < 0)
+					      and_res = true;
+					    cc = grep_line(ln, pcell->c, (Byte)(pcell->props&~(M_MARK+M_SIMPLE)));
+					    if (cc == OK)
+					    { pcell->props |= M_MARK;
+					      if (pcell->props & M_NOT)
+					      { if (pcell->props & M_AND) 
+					          and_res = false;
+					      }
+					      else
+					      { if ((pcell->props & M_AND) == 0)
+					        { occ_ct += 1;
+									  or_res = true;
+									  if (v_opt)
+									  { while (*ln == ' ' || *ln == 9)
+									      ++ln;
+									    eprintf(null, "%s:	%s\n", filename, ln);
+									    if (v_opt > 1)
+									    { int sp = strlen(filename);
+									      if (sp > 30) sp = 30;
+									      cc = v_opt;
+									      while (--cc > 0)
+									      { Char * ln = ffgetline(&linebuf, ip);
+								                if (ln == null)
+								                  break;
+									        while (*ln == ' ' || *ln == 9)
+									          ++ln;
+									        eprintf(null, "%s:	%s\n", &blank[30-sp], ln);
+									      }
+									    }
+									  }
+									  break;
+				        }
 				      }
 				    }
 				  }
-				}
-				
+        }
+	
         fclose(ip);
         cc = occ_ct == 0;
         if (cc != OK)
@@ -628,7 +635,7 @@ static void doit(
     { if (not at_opt and (msd_attrs & MSD_POST))
       { /*eprintf(null, "Pend %s %x\n", eny, msd_attrs);*/
         pending_delete = not g_filter;
-	strcpy(&cmd_line[0], eny);
+				strcpy(&cmd_line[0], eny);
       }
       else
       { if (v_opt) 
@@ -643,8 +650,8 @@ static void doit(
         }
 #endif
       { Cc cc = erase_file(fn+1, ' ');
-	if (cc != OK)
-	{ eprintf(null, "CD %d %s\n", errno, eny);
+				if (cc != OK)
+				{ eprintf(null, "CD %d %s\n", errno, eny);
         }
       }}}
     }
@@ -662,59 +669,59 @@ static void doit(
       #define ix ch
       for (ix = -1; ++ix < e_fmt_ix; )
       { fmt_cmd(ix, sheny);
-	if (e_fmt_kind[ix] == 'p')
-	{  msg_str(cmd_line, "");
-	}
-	else
-	{  fflush(stdout);
+				if (e_fmt_kind[ix] == 'p')
+				{  msg_str(cmd_line, "");
+				}
+				else
+				{  fflush(stdout);
 #if S_MSDOS
-	   shellprog(cmd_line);
+				   shellprog(cmd_line);
 #else
-	   system(cmd_line);
+				   system(cmd_line);
 #endif
-	}
+				}
       }
     }
     else
     { if (long_opt != 0)
       { extern struct tm time_dcr;    /* from tad.c */
 	#if S_MSDOS
-			  if (at_opt)
+				if (at_opt)
 				{ struct tm * res = gmtime(&msd_stat.st_mtime);
 				  if (res != 0)
 				    memcpy(&time_dcr, res, sizeof (struct tm));
 				}
 				else
-					(void)tad_to_asc(msd_stat.st_mtime);
+				  (void)tad_to_asc(msd_stat.st_mtime);
 	#else
 			{ struct tm * res = localtime(&msd_stat.st_mtime);
-			  if (res != 0)
-	    		memcpy(&time_dcr, res, sizeof (struct tm));
+				if (res != 0)
+					memcpy(&time_dcr, res, sizeof (struct tm));
 			}
 	#endif
 				eprintf(null, "%02d/%02d/%02d %2d:%02d ",
-				       (short)time_dcr.tm_year %100,
-			  	     (short)time_dcr.tm_mon+1,
-			    	   (short)time_dcr.tm_mday,
-			      	 (short)time_dcr.tm_hour,
-			      	 (short)time_dcr.tm_min,
-			       	 (short)time_dcr.tm_sec
-	       			);
+			     	  	(short)time_dcr.tm_year %100,
+			      	  (short)time_dcr.tm_mon+1,
+				        (short)time_dcr.tm_mday,
+				        (short)time_dcr.tm_hour,
+				        (short)time_dcr.tm_min,
+				        (short)time_dcr.tm_sec
+				       );
 /*	    eprintf(null, "%ld ", msd_stat.st_mtime); */
 
-				if (long_opt > 1)
+			 	if (long_opt > 1)
 #if S_MSDOS
-					eprintf(null, "%c%c%c%c ",
-						       msd_attrs & MSD_ROFILE  ? ' ' : 'w',
-						       msd_attrs & MSD_CHGD    ? 'a' : ' ',
-						       msd_attrs & MSD_HIDFILE ? 'h' : ' ',
-						       msd_attrs & MSD_SYSFILE ? 's' : ' '
-						     );
+			   eprintf(null, "%c%c%c%c ",
+					       msd_attrs & MSD_ROFILE  ? ' ' : 'w',
+			    		   msd_attrs & MSD_CHGD    ? 'a' : ' ',
+					       msd_attrs & MSD_HIDFILE ? 'h' : ' ',
+					       msd_attrs & MSD_SYSFILE ? 's' : ' '
+				        );
 #else
-					eprintf(null, "%3o ", msd_stat.st_mode & 0777);
+			   eprintf(null, "%3o ", msd_stat.st_mode & 0777);
 #endif
 				fputsout(sheny);
-	    }
+      }
       else if (gr_pat == null or not v_opt)
 				fputsout(sheny);
       if (ct_opt and occ_ct > 0 and not v_opt)
@@ -811,158 +818,157 @@ static void process_args()
 
     while ((ch = *++s) != 0)
     { switch (ch)
-      { case '.':  echo = 1;
-        when '@':  at_opt += 1;
-								   split_needed = true;
-								   if (s[1] != 0 && s[1] != '@')
-								   { at_fn = s + 1;
-								     s += strlen(s) - 1;
-								   }
-				when 'a':  a_opt = true;
-				when 'n':  negprops = M_NOT;
-				when 'f':{ Vint sargc = argc_;
-								   Vint sargix = argix_;
-								   argc_ = 0;
-								   process_args();
-								   argc_ = sargc;
-								   argix_ = sargix;
+      { case '.': echo = 1;
+        when '@': at_opt += 1;
+								  split_needed = true;
+								  if (s[1] != 0 && s[1] != '@')
+								  { at_fn = s + 1;
+								    s += strlen(s) - 1;
+								  }
+				when 'n': negprops = M_NOT;
+				when 'f':{Vint sargc = argc_;
+								  Vint sargix = argix_;
+								  argc_ = 0;
+								  process_args();
+								  argc_ = sargc;
+								  argix_ = sargix;
 								 }	  
-				when 'C':  verb_comp |= M_VERBOSE;
-				case 'c':  dodiff = false;
-							     for ( ; s[1] != 0; ++s)
-								     if      (s[1] == 'b')
-								       verb_comp |= M_SKIPSP;
-								     else if (s[1] == '?')
-								       verb_comp |= M_IFTHERE;
-								     else if (s[1] == 'v')
-								       dodiff = true;
+				when 'C': verb_comp |= M_VERBOSE;
+				case 'c': dodiff = false;
+				          for ( ; s[1] != 0; ++s)
+								    if      (s[1] == 'b')
+								      verb_comp |= M_SKIPSP;
+								    else if (s[1] == '?')
+								      verb_comp |= M_IFTHERE;
+								    else if (s[1] == 'v')
+								      dodiff = true;
 
-								   cmp_dir = get_ee(true);
-								   if (cmp_dir == null)
-								     explain();
+								  cmp_dir = get_ee(true);
+								  if (cmp_dir == null)
+								    explain();
 
-								   if (dodiff)
-								   { Char buf[272];
-								     sprintf(buf,"diff -i -a -b %s%s%%s %%s",
-								                 cmp_dir,
-								                 cmp_dir[strlen(cmp_dir) -1] == '/' ? "" : "/"
+								  if (dodiff)
+								  { Char buf[272];
+								    sprintf(buf,"diff -i -a -b %s%s%%s %%s",
+		        			         cmp_dir,
+		               				 cmp_dir[strlen(cmp_dir) -1] == '/' ? "" : "/"
 								            );
-								     e_fmt_kind[e_fmt_ix] = 'p';
-								     e_fmt[e_fmt_ix++] = strdup(buf);
-								     e_fmt_kind[e_fmt_ix] = 'e';
-								     e_fmt[e_fmt_ix++] = strdup(buf);
-								     msd_simple |= MSD_NOCHD;
-								   }
+								    e_fmt_kind[e_fmt_ix] = 'p';
+								    e_fmt[e_fmt_ix++] = strdup(buf);
+								    e_fmt_kind[e_fmt_ix] = 'e';
+								    e_fmt[e_fmt_ix++] = strdup(buf);
+								    msd_simple |= MSD_NOCHD;
+						   		}
 
-				when 'e':  
-				case 'p':  if (e_fmt_ix >= NO_FMT)
-								   { fputserr("Too many cmds\n");
-								     myexit(0);
-								   }
-								   e_fmt_kind[e_fmt_ix] = ch;
-								   e_fmt[e_fmt_ix++] = get_ee(true);
-								   if (ch == 'e')
-								     msd_simple |= MSD_NOCHD;
-								   if (s[1] != ch && (s[1] == 'e' || s[1] == 'p'))
-								   { e_fmt_kind[e_fmt_ix] = s[1];
-								     e_fmt[e_fmt_ix] = strdup(e_fmt[e_fmt_ix-1]);
-								     ++e_fmt_ix;
-								     ++s;
-								     msd_simple |= MSD_NOCHD;
-								   }
+				when 'e':  			
+				case 'p': if (e_fmt_ix >= NO_FMT)
+								  { fputserr("Too many cmds\n");
+								    myexit(0);
+								  }
+								  e_fmt_kind[e_fmt_ix] = ch;
+								  e_fmt[e_fmt_ix++] = get_ee(true);
+								  if (ch == 'e')
+								    msd_simple |= MSD_NOCHD;
+								  if (s[1] != ch && (s[1] == 'e' || s[1] == 'p'))
+								  { e_fmt_kind[e_fmt_ix] = s[1];
+								    e_fmt[e_fmt_ix] = strdup(e_fmt[e_fmt_ix-1]);
+								    ++e_fmt_ix;
+								    ++s;
+								    msd_simple |= MSD_NOCHD;
+								  }
 
-				when 'T':  msd_simple |= MSD_CHGD;
+				when 'T': msd_simple |= MSD_CHGD;
 
-				when '\\': sep_ch = ch;
+				when '\\':sep_ch = ch;
 
-				when '/':{ Char * fpat = null;
-								   Byte fname_props = conj | negprops;
-								   Vint fprops = 0;
+				when '/':{Char * fpat = null;
+								  Byte fname_props = conj | negprops;
+								  Vint fprops = 0;
 
-								   while ((ch = *++s) != 0)
-								     switch (ch)
-								     { when 'u': fname_props |= M_IC;
-								       when 'r': fprops |= MSD_ROFILE;
-								       when 'a': fprops |= MSD_CHGD;
-								       when 'h': fprops |= MSD_HIDFILE;
-								       when 's': fprops |= MSD_SYSFILE;
+								  while ((ch = *++s) != 0)
+								    switch (ch)
+								    { when 'u': fname_props |= M_IC;
+								      when 'r': fprops |= MSD_ROFILE;
+								  	  when 'a': fprops |= MSD_CHGD;
+								      when 'h': fprops |= MSD_HIDFILE;
+								      when 's': fprops |= MSD_SYSFILE;
 								       
-								       when '/': fpat = s;
-								       					 *s = '*';
-																 s = ""; --s;
-								     }
+								      when '/': fpat = s;
+										       		  *s = '*';
+																s = ""; --s;
+								    }
 
-								   props[fname_props & 3] |= fprops;
-								   --s;
-								   if (fprops == 0)		/* pattern needed */
-								   {
-								     if (fpat == null)
-								     { fpat = get_ee(false);
-								       if (fpat == null)
-												 explain();
-								     }
+								  props[fname_props & 3] |= fprops;
+								  --s;
+								  if (fprops == 0)		/* pattern needed */
+								  {
+								    if (fpat == null)
+								    { fpat = get_ee(false);
+								      if (fpat == null)
+											 explain();
+								    }
 
-								     if (fpat[strlen(fpat)-1] == '/')
-								     { /* fpat[strlen(fpat)-1] = 0; */
-								       fname_props |= M_DIRNM;
-								     }
+								    if (fpat[strlen(fpat)-1] == '/')
+								    { /* fpat[strlen(fpat)-1] = 0; */
+								      fname_props |= M_DIRNM;
+								    }
 
-								     add_cell(&re_exp, fpat, (Byte)(fname_props | O_M_IC));
-								     if (conj)
-								       re_and += 1;
-								     else
-								       fn_or = true;
-								     if (conj == 0 and negprops != 0 or
-												 conj != 0 and negprops == 0)
-								       explain();
-								   }
+								    add_cell(&re_exp, fpat, (Byte)(fname_props | O_M_IC));
+								    if (conj)
+								      re_and += 1;
+								    else
+								      fn_or = true;
+								    if (conj == 0 and negprops != 0 or
+											 conj != 0 and negprops == 0)
+								      explain();
+								  }
 								 }
-				when 'o':  ch = *++s - '0';
-							     if (ch == '0')
-							       ch = 1;
-								   if (ch != 1 and ch != 2)
-								     explain();
-				when 's':
-				case 'm':  msd_simple &= ~MSD_SIMPLE;
-								 { Char * nxt = get_ee(false);
-								   if (nxt == null)
-								     explain();
-								   if	   (ch == 's')
-								   { Int sz = atol(nxt);
-								     if (sz > 0)
-								       s_lo_opt = sz;
-								     else 
-								       s_hi_opt = -sz;
-								   }
-								   else if (ch == 'm')
-								   { Nat4 date = asc_to_tad(nxt);
-						         if (grep_line(nxt, "^TODAY", M_MATCHWORD+M_IC) == OK ||
-						             grep_line(nxt, "^NOW"  , M_MATCHWORD+M_IC) == OK)
-						         { char ch = toupper(*nxt);
-						           int offs = 0;
-							         while (*++nxt != 0 && *nxt != '+' && *nxt != '-')
-							           ;
-							         offs = atoi(nxt) * 60;
+				when 'o': ch = *++s - '0';
+				          if (ch == '0')
+				            ch = 1;
+									  if (ch != 1 and ch != 2)
+									     explain();
+				case 's':
+				case 'm': msd_simple &= ~MSD_SIMPLE;
+									{ Char * nxt = get_ee(false);
+									  if (nxt == null)
+									    explain();
+									  if	   (ch == 's')
+									  { Int sz = atol(nxt);
+									    if (sz > 0)
+									      s_lo_opt = sz;
+									    else 
+									      s_hi_opt = -sz;
+									  }
+									  else if (ch == 'm')
+										{ Nat4 date = asc_to_tad(nxt);
+											if (grep_line(nxt, "^TODAY", M_MATCHWORD+M_IC) == OK ||
+													grep_line(nxt, "^NOW"  , M_MATCHWORD+M_IC) == OK)
+		                  { char ch = toupper(*nxt);
+			                   int offs = 0;
+						             while (*++nxt != 0 && *nxt != '+' && *nxt != '-')
+						               ;
+	        					     offs = atoi(nxt) * 60;
 #if S_MSDOS
-						         { time_t now = time(null) + offs;
-						           struct tm * res;
-						         /*printf("Yr %d Mon %d Day %d\n", res->tm_year, res->tm_mon+1,res->tm_mday);*/
-						           if (ch == 'T')
-						           { now /= (24*60*60);
-						             now *= (24*60*60);
-                       }
-                       res = gmtime(&now);
-                       if (in_range(res->tm_mon, 5, 8) && ch == 'T')
-                       { now -= 60 * 60;
-                         res = gmtime(&now);
-                       }
-								       date = ((Int)(((res->tm_year-80)<< 9) +
-	                             ((res->tm_mon+1) << 5) +
-	                             res->tm_mday) << 16)
-	                       +(res->tm_hour<< 11) +  /* was +? */
-	                        (res->tm_min  << 5) +
-	                        (res->tm_sec >> 1);
-                     }
+		                  { time_t now = time(null) + offs;
+			                  struct tm * res;
+                     /*printf("Yr %d Mon %d Day %d\n", res->tm_year, res->tm_mon+1,res->tm_mday);*/
+      			            if (ch == 'T')
+	                     	{ now /= (24*60*60);
+	                       	now *= (24*60*60);
+	                     	}
+	                     	res = gmtime(&now);
+	                     	if (in_range(res->tm_mon, 5, 8) && ch == 'T')
+	                     	{ now -= 60 * 60;
+	                       	res = gmtime(&now);
+	                     	}
+									     	date = ((Int)(((res->tm_year-80)<< 9) +
+	          	                  ((res->tm_mon+1) << 5) +
+	            	                 res->tm_mday) << 16)
+	        		  	             +(res->tm_hour<< 11) +  /* was +? */
+	            			            (res->tm_min  << 5) +
+			              	          (res->tm_sec >> 1);
+    			             }
 #else
                        date = time(null);
                        if (ch == 'T')
@@ -996,7 +1002,7 @@ static void process_args()
 								     }
 											*/
 								     /* eprintf(null, "Date Opt is %ld\n", date_e_opt);*/
-								   }}
+										}}
 								   else
 								   { unlink(nxt);
 								     freopen(nxt, "a", ch == 1 ? stdout : stderr);
@@ -1004,7 +1010,7 @@ static void process_args()
 								 }
 				when 'g':
 				case 'G':{ Byte props = (ch == 'G') * M_IC |
-																 conj | negprops   |				
+																conj | negprops   |				
 																(s[1] != 0 ? 0 : M_MATCHWORD);
 								   add_cell(&gr_pat, 
 												    (props & M_MATCHWORD) ? get_ee(false) : &s[1],
@@ -1026,19 +1032,19 @@ static void process_args()
                        *xstr = toupper(*xstr);
                  }
 
-				when 'd': nosl_opt = true;
-		  						d_opt = true;
-							  	msd_simple |= MSD_NOCHD;
-					  			if (s[1] == 'y')
-					  			{ d_opt = 2;
-					   				++s;
-					 				}
+				when 'd':  nosl_opt = true;
+								   d_opt = true;
+								   msd_simple |= MSD_NOCHD;
+								   if (s[1] == 'y')
+								   { d_opt = 2;
+								     ++s;
+								   }
 				case '+':  prepost_opts |= MSD_POST;
 				when 'i':  i_opt = true;
 				when 'l':  msd_simple &= ~MSD_SIMPLE;
-								   long_opt = 1;
+					   long_opt = 1;
 				when 'L':  msd_simple &= ~MSD_SIMPLE;
-					  			 long_opt = 2;
+					   long_opt = 2;
 				when 'u':  u_opt = true;
 				when 'q':  q_opt = true;
 				           if (s[1] == 'q') qq_opt = true;
@@ -1057,8 +1063,8 @@ static void process_args()
 								   { eprintf(null, ">%s<\n", s);
 								     explain();
 								   }
-								   rec_clamp = ch-'0';
-			}
+					   rec_clamp = ch-'0';
+      }
     }
   }}
   
@@ -1073,7 +1079,7 @@ static void process_args()
     props[IX_ORN] |= MSD_ROFILE;
   }
   g_filter = (Int)re_exp | s_lo_opt   | ((s_hi_opt+1) & 0x7fffffff) 
-						| date_e_opt | (date_l_opt + 1);
+			 | date_e_opt | (date_l_opt + 1);
 
   g_one_suff = 0;
   if (re_exp != null)
@@ -1141,9 +1147,9 @@ int main(
         msd_attrs = msd_getprops(eny);
 #else
         msd_attrs =((fstat_.st_mode & S_IFMT) == S_IFDIR ? MSD_DIRY   :
-		    (fstat_.st_mode & S_IREAD) != 0      ? MSD_ROFILE : 0) | 
-		    /* crude!*/
-				     (eny[0] == '.' ? MSD_HIDFILE : 0);
+		  						  (fstat_.st_mode & S_IREAD) != 0      ? MSD_ROFILE : 0) | 
+					    /* crude!*/
+								     (eny[0] == '.' ? MSD_HIDFILE : 0);
 #endif
       }
     }
@@ -1163,16 +1169,11 @@ int main(
     /*eprintf(null, "Filling %s\n", fn);*/
       msd_init(fn, "",
                MSD_DIRY | MSD_AUTO | MSD_POST |
-					    (props[IX_OR] | props[IX_AND])&(MSD_HIDFILE+MSD_SYSFILE) |
-							 msd_simple
-				      );
+		  			  (props[IX_OR] | props[IX_AND])&(MSD_HIDFILE+MSD_SYSFILE) |
+								msd_simple
+	   				  );
     }
   /*printf("Got file %s %s\n", fn, eny);*/
-
-		if (a_opt && gr_first != NULL)
-		{	fputsout(gr_first);
-			fputsout("\n");
-		}
 
   { int fnoffs=0;
     Vint dirl = not q_opt or at_opt /*or ix>0 or argix_ != argc_-1*/
@@ -1198,22 +1199,22 @@ int main(
 	      (props[IX_AND ] != (props[IX_AND ] & msd_attrs) or
 	       props[IX_ANDN] != (props[IX_ANDN] & ~ msd_attrs) or
 	      (not(props[IX_OR]+props[IX_ORN] == 0 or 
-		  	(props[IX_OR] & msd_attrs) or 
-			  (props[IX_ORN] & ~msd_attrs)))))
-				;
+		  (props[IX_OR] & msd_attrs) or 
+		  (props[IX_ORN] & ~msd_attrs)))))
+	;
       else
       { Set16 pset = want_file(&eny[fnoffs]);
         if (pset & M_DOPROC)
 				  doit(fn, eny, dirl);
         if ((msd_attrs & MSD_DIRY & pset) and 
 				    (u_opt or !msd_isslink())  and
-	    			rec_clamp > 0 and (~msd_attrs & MSD_POST))
+				    rec_clamp > 0 and (~msd_attrs & MSD_POST))
         { 
         /*eprintf(null, "MSDP(RPT) %s\n", eny);*/
 				  if (msd_push() == EDENIED && vv_opt)
 				  { char cwdb[160];
-	    			eprintf((char*)stderr,"Cannot open %s (CWD %s)\n",eny,getcwd(cwdb,159));
-				  }
+				    eprintf((char*)stderr, "Cannot open %s (CWD %s)\n", eny, GetCwd(cwdb, 159));
+	  			}
 				  --rec_clamp;
         }
       }
@@ -1225,7 +1226,7 @@ int main(
       }
 #endif
       if (at_opt)
-				break;
+	break;
     }}
   }}
 

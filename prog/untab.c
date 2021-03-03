@@ -2,11 +2,11 @@
 #include "build.h"
 
 
-private Int  lineix = 0;
-private Int  linect = 0;
-private Int tabsz0 = 8;
-private Int tabsz = 8;
-private Int pagelen = 66;
+static Int  lineix = 0;
+static Int  linect = 0;
+static Int tabsz0 = 8;
+static Int tabsz = 8;
+static Int pagelen = 66;
 
 
 #define VT 12

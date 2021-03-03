@@ -13,7 +13,7 @@ extern char * malloc();
 Char cmd_line[256]; /* for msera.obj */
 
 
-private void explain()
+static void explain()
 
 { fprintf(stderr, "touch filename*\n");
   exit(0);

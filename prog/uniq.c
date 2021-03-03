@@ -14,7 +14,7 @@ Bool c_opt = false;
 
 
 
-private void explain()
+static void explain()
 
 { fprintf(stderr,
 "uniq -udc filename*\n"
@@ -24,7 +24,7 @@ private void explain()
   exit(0);
 }
 
-private void doit(f)
+static void doit(f)
       FILE * f;
 { Short mult = 0;
   Vint ct;

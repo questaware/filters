@@ -28,14 +28,14 @@ export Path
 ifneq ($(DEBUG),1)
 #CFLAGS=/nologo /W3 /Gm /ZI /Od /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FR".\\" /Fo".\\" /Fd".\\" /FD /GZ
 #CFLAGS=$(MM) /nologo /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" $(DDBG) /FR".\\" /Fo".\\" /Fd".\\" /FD /GZ
-CFLAGS=$(MM) /nologo /W3 /O1 /Os /Og /Oy /GF $(C_FLG) /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "NDEBUG" /D "_CONSOLE" /c 
+CFLAGS=$(MM) /nologo /W3 /O1 /Os /Og /Oy /GF $(C_FLG) /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "NDEBUG" /D "_CONSOLE"
 FPAR=-debug:extended -nologo -c -fpp -CB -names:lowerc -align -extend_sou -warn:all -module:. -threads  -Z7 -Od -traceback -Qinline-debug-info -check:all $(DDBG) -DSTART_FROM_C -I.. -I../ppsutils_f -I.
-LFLAGS=/MTd /Zi
+LFLAGS=
 LPAR=orasql9.lib /nologo /subsystem:console -debug -nodefaultlib:libc.lib
 else
 #CFLAGS=/nologo /W3 /Od /Zp4 /D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Fo".\\" /Fd".\\"
 #CFLAGS=$(MM) /nologo /W3 /Od /Zp4 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" $(DDBG) /Fo".\\" /Fd".\\"
-CFLAGS=$(MM) /nologo /YX /Yd /W3 /Zi /MDd /Od /D WIN32_LEAN_AND_MEAN /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /c 
+CFLAGS=$(MM) /nologo /YX /Yd /W3 /Zi /MDd /Od /D WIN32_LEAN_AND_MEAN /D "_DEBUG" /D "_CONSOLE" /D "_MBCS"
 FPAR=-nologo -c -fpp -CB -names:lowerc -align -extend_source -warn:all -module:. -threads  -O3 $(DDBG) -traceback -Qinline-debug-info -I.. -I../../ppsutils_f -I. 
 LFLAGS= /nologo /debug
 LPAR=orasql9.lib /nologo /subsystem:console
@@ -150,6 +150,9 @@ slugcomma.exe: slugcomma.obj
 untab.exe: ../../untab.c
 	$(CC) $(CFLAGS) -I.. ../../untab.c
 
+hammer.exe: ../../hammer.c
+	$(CC) -o hammer.exe $(CFLAGS) -I.. ../../hammer.c
+
 striphtm.exe: ../../striphtm.c ssprintf.obj
 	$(CC) -o striphtm.exe $(CFLAGS) -I.. ../../striphtm.c ssprintf.obj
 
@@ -160,7 +163,7 @@ tmp.obj: ../../tmp.c
 	$(CC) $(CFLAGS) -I.. -c ../../tmp.c
 
 tmp.exe: tmp.obj
-	$(LK) $(LFLAGS) /ST:1400 tmp, tmp, , ;
+	$(LK) $(LFLAGS) /STACK:1400 tmp, tmp, , ;
 
 sameword.obj: ../../sameword.c
 	$(CC) $(CFLAGS) -I.. -c ../../sameword.c
@@ -172,37 +175,37 @@ tocol.obj: ../../tocol.c
 	$(CC) $(CFLAGS) -I.. -c ../../tocol.c
 
 tocol.exe: tocol.obj sprint3.obj strutil.obj memarch.obj
-	$(LK) $(LFLAGS) /ST:1400 tocol+sprint3+strutil+memarch, tocol, , ;
+	$(LK) $(LFLAGS) /STACK:1400 tocol.obj sprint3.obj strutil.obj memarch.obj
 
 srename.obj: ../../srename.c
 	$(CC) $(CFLAGS) -I.. -c ../../srename.c
 
 srename.exe: srename.obj msdir.obj sprintf.obj
-	$(LK) $(LFLAGS) /ST:1400 /out:srename.exe srename.obj msdir.obj sprintf.obj
+	$(LK) $(LFLAGS) /STACK:1400 /out:srename.exe srename.obj msdir.obj sprintf.obj
 
 grepinc.obj: ../../grepinc.c
 	$(CC) $(CFLAGS) -I.. -c ../../grepinc.c
 
 grepinc.exe: grepinc.obj msexec.obj flook.obj
-	$(LK) $(LFLAGS) /ST:1400 grepinc+msexec+flook, grepinc, , ;
+	$(LK) $(LFLAGS) /STACK:1400 grepinc.obj msexec.obj flook.obj sprintf.obj strutil.obj
 
 ginc.obj: ../../ginc.c
 	$(CC) $(CFLAGS) -I.. -c ../../ginc.c
 
 ginc.exe: ginc.obj
-	$(LK) $(LFLAGS) /ST:1200 ginc, ginc, , ;
+	$(LK) $(LFLAGS) /STACK:1200 ginc.obj
 
 fromby.obj: ../../fromby.c
 	$(CC) $(CFLAGS) -I.. -c ../../fromby.c
 
 fromby.exe: fromby.obj
-	$(LK) $(LFLAGS) /ST:1200 fromby, fromby, , ;
+	$(LK) $(LFLAGS) /STACK:1200 fromby.obj
 
 touch.obj: ../../touch.c
 	$(CC) $(CFLAGS) -I.. -c ../../touch.c
 
 touch.exe: touch.obj msdir.obj msera.obj
-	$(LK) $(LFLAGS) /ST:1200 touch+msdir+msera, touch, , ;
+	$(LK) $(LFLAGS) /STACK:1200 touch.obj msdir.obj msera.obj
 
 cp.obj: ../../cp.c
 	$(CC) $(CFLAGS) -I.. -c ../../cp.c
@@ -223,19 +226,19 @@ sct_offs.obj: ../../sct_offs.c
 	$(CC) $(CFLAGS) -I.. -c ../../sct_offs.c
 
 sct_offs.exe: sct_offs.obj
-	$(LK) $(LFLAGS) /ST:1200 sct_offs, sct_offs, , ;
+	$(LK) $(LFLAGS) /STACK:1200 sct_offs, sct_offs, , ;
 
 unlink.obj: ../../unlink.c
 	$(CC) $(CFLAGS) -I.. -c ../../unlink.c
 
 unlink.exe: unlink.obj
-	$(LK) $(LFLAGS) /ST:1200  unlink, unlink, , ;
+	$(LK) $(LFLAGS) /STACK:1200  unlink, unlink, , ;
 
 dirorg.obj: ../../dirorg.c
 	$(CC) $(CFLAGS) -I.. -c ../../dirorg.c
 
 dirorg.exe: dirorg.obj
-	$(LK) $(LFLAGS) /ST:1200  dirorg, dirorg, , ;
+	$(LK) $(LFLAGS) /STACK:1200  dirorg, dirorg, , ;
 
 bin2hex.obj: ../../bin2hex.c
 	$(CC) $(CFLAGS) -I.. -c ../../bin2hex.c
@@ -247,19 +250,19 @@ dumpdisk.obj: ../../dumpdisk.c
 	$(CC) $(CFLAGS) -I.. -c ../../dumpdisk.c
 
 dumpdisk.exe: dumpdisk.obj
-	$(LK) $(LFLAGS) /ST:1200  dumpdisk, dumpdisk, , ;
+	$(LK) $(LFLAGS) /STACK:1200  dumpdisk, dumpdisk, , ;
 
 tail.obj: ../../tail.c
 	$(CC) $(CFLAGS) -I.. -c ../../tail.c
 
 tail.exe: tail.obj
-	$(LK) $(LFLAGS) /ST:1200  tail, tail, , ;
+	$(LK) $(LFLAGS) /STACK:1200  tail, tail, , ;
 
 hex2bin.obj: ../../hex2bin.c
 	$(CC) $(CFLAGS) -I.. -c ../../hex2bin.c
 
 hex2bin.exe: hex2bin.obj
-	$(LK) $(LFLAGS) /ST:1200  hex2bin, hex2bin, , ;
+	$(LK) $(LFLAGS) /STACK:1200  hex2bin, hex2bin, , ;
 
 invtags.obj: ../../invtags.c
 	$(CC) $(CFLAGS) -I.. -c ../../invtags.c
@@ -277,13 +280,13 @@ timediff.obj: ../../timediff.c
 	$(CC) $(CFLAGS) -I.. -c ../../timediff.c
 
 timediff.exe: timediff.obj
-	$(LK) $(LFLAGS) /ST:1400  timediff, timediff, , ;
+	$(LK) $(LFLAGS) /STACK:1400  timediff, timediff, , ;
 
 shellsrt.obj: ../../../util/shellsrt.c
 	$(CC) $(CFLAGS) -I.. -c ../../../util/shellsrt.c
 
 shellsrt.exe: shellsrt.obj
-	$(LK) $(LFLAGS) /ST:1400  shellsrt, shellsrt, , ;
+	$(LK) $(LFLAGS) /STACK:1400  shellsrt, shellsrt, , ;
 
 clay.exe: ../../clay.c
 	$(CC) $(CFLAGS) -I.. -oclay.exe ../../clay.c
@@ -322,13 +325,13 @@ uniq.obj: ../../uniq.c
 	$(CC) $(CFLAGS) -I.. -c ../../uniq.c
 
 uniq.exe: uniq.obj msdir.obj
-	$(LK) $(LFLAGS) /ST:1400  uniq+msdir, uniq, , ;
+	$(LK) $(LFLAGS) /STACK:1400  uniq.obj msdir.obj
 
 spread.obj: ../../spread.c
 	$(CC) $(CFLAGS) -I.. -c ../../spread.c
 
 spread.exe: spread.obj sprint3.obj
-	$(LK) /B /ST:1400 $(LFLAGS) spread+sprint3, spread, , ;
+	$(LK) /B /STACK:1400 $(LFLAGS) spread.obj sprint3.obj
 
 strmpath.obj: ../../../util/strmpath.c
 	$(CC) $(CFLAGS) -I.. -c ../../../util/strmpath.c
@@ -353,6 +356,12 @@ toupper.obj: ../../toupper.c selsleep.obj
 
 toupper.exe: toupper.obj
 	link $(LFLAGS) toupper.obj selsleep.obj
+
+base64.obj: ../../base64.c
+	$(CC) $(CFLAGS) -I.. -c ../../base64.c
+
+base64.exe: base64.obj
+	link $(LFLAGS) base64.obj
 
 #getcalls.exe: ../../getcalls.cpp
 #	$(CC) $(CFLAGS) -GX -I.. -o getcalls.exe ../../getcalls.cpp
@@ -404,7 +413,7 @@ ssprintf.obj: ../../../common/sprintf.c
 	$(CC) $(CFLAGS) -ossprintf.obj -DUSE_T -I.. -I../../../common -c ssprintf.c
 
 sprint3.obj: ../../../common/sprintf.c
-	copy ..\..\common\sprintf.c sprint3.c
+	copy ..\..\..\common\sprintf.c sprint3.c
 	$(CC) $(CFLAGS) -DALL_32BIT=1 -I.. -I../../../common -c sprint3.c
 	del sprint3.c
 
@@ -424,7 +433,7 @@ SOBJS = args.obj strutil.obj re.obj msdir.obj msexec.obj msera.obj ssprintf.obj 
 
 ll.exe: ll.obj strutil.obj args.obj re.obj msdir.obj msexec.obj msera.obj ssprintf.obj diffs.obj getline.obj tad.obj flook.obj fip.obj grutil.obj
 #	$(CC) -GX -I.. -o ll.exe ../../ll.c $(SOBJS) $(LIBS)
-	$(LINK) $(LFLAGS) ll.obj $(SOBJS) $(LIBS)
+	$(LK) $(LFLAGS) ll.obj $(SOBJS) $(LIBS)
 
 docrypt.obj: ../../docrypt.c
 	$(CC) $(CFLAGS) -I.. -c ../../docrypt.c
@@ -433,15 +442,13 @@ crypt.obj: ../../../common/crypt.c
 	$(CC) $(CFLAGS) -I.. -c ../../../common/crypt.c
 
 docrypt.exe: docrypt.obj crypt.obj msdir.obj sprintf.obj
-	$(LK) $(LFLAGS) /ST:2000  docrypt+crypt+msdir+sprintf, docrypt, , ;
-
-
+	$(LK) $(LFLAGS) /STACK:2000  docrypt.obj crypt.obj msdir.obj sprintf.obj
 
 tree.obj: ../../tree.cpp
 	$(CC) $(CFLAGS) -I.. -c ../../tree.cpp
 
 tree.exe: tree.obj
-	$(LK) $(LFLAGS) /ST:2000  /nologo /subsystem:console tree.obj kernel32.lib smsapi.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib  
+	$(LK) $(LFLAGS) /STACK:2000  /nologo /subsystem:console tree.obj kernel32.lib smsapi.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib  
 
 
 
