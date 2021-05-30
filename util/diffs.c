@@ -47,12 +47,11 @@ Lbuf_t linebuf1, linebuf2;
 
 					/* -1 => file 1 not found */
 					/* -2 => file 2 not found */
-					/* 1 => different */
+					/*  1 => different */
 					/* OK => same */
-Cc same_files(
-	Char *   fname1,
-	Char *   fname2,
-	Vint     flags)
+Cc same_files(Char *   fname1,
+							Char *   fname2,
+							Vint     flags)
 { Cc cc = OK;
   Vint lno = 0;
   FILE * fd1 = fopen(fname1, "rb");

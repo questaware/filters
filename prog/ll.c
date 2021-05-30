@@ -97,7 +97,7 @@ typedef struct Patcell_s
   Byte props[4] = {0};
 
   Bool split_needed = false;
-  Vint at_opt = 0;
+  Char at_opt = 0;
   Char * at_fn = NULL;
   Bool i_opt = false;
   Bool d_opt = false;
@@ -334,14 +334,14 @@ static Set16 want_file(char * eny)
              &&((pc->props ^ is_diry) & MSD_DIRY) ==0 )
       {/*eprintf(null, "GOT eny\n");*/
         if (pc->props & M_NOT)
-	  return 0;
+				  return 0;
 	
-	inneed = 1;
+				inneed = 1;
       }
       else
       { /*eprintf(null, "NGOT %s\n", pc->c);*/
         if (!(pc->props & M_NOT))
-	  no_ct += 1;
+				  no_ct += 1;
       }
     }
       
@@ -384,11 +384,9 @@ static Set16 want_file(char * eny)
 }
 
 
-static void doit(
-	char *	diry,
-	char *	eny,
-	Vint	dirlen)
-
+static void doit(	char *	diry,
+									char *	eny,
+									Vint	dirlen)
 {      Char * sheny = &eny[dirlen];
   fast Char ch;
   Set16 is_diry = msd_attrs & (MSD_DIRY+MSD_POST);
@@ -414,7 +412,7 @@ static void doit(
     { d_opt = 2;
       msg_str("Press d to delete files", "");
       if ((grabchar() | 0x20) != 'd')
-	myexit(0);
+				myexit(0);
     }
     if (i_opt == 1)
     { fputserr("Y, y, o, CR confirms one, SP all, ^A-Z quits\r\n");
@@ -502,13 +500,15 @@ static void doit(
           else
           { if (eny[0] == '.' and (eny[1] == '/' or eny[1] == '\\'))
               eny += 2;
-          { Char * t = eny-1;
-            while (*++t != 0)
-              if (in_range(*t, 'a', 'z') or in_range(*t, 'A', 'Z'))
-                *t ^= 0x20;
-
+					{	Char buf[1024];
+          	Char * t = buf-1;
+          	Char * s = eny-1;
+          	Char ch;
+            while ((ch = *++s) != 0)
+            	*++t = in_range(ch, 'a','z') || in_range(ch, 'A','Z') ? ch ^ 0x20
+            																												: ch;
             if (e_fmt_ix == 0  && (verb_comp & M_IFTHERE) == 0)
-              eprintf(null, ">> %s\n", eny);
+              eprintf(null, ">> %s\n", buf);
             return;
           }}
         }
@@ -819,12 +819,13 @@ static void process_args()
     while ((ch = *++s) != 0)
     { switch (ch)
       { case '.': echo = 1;
-        when '@': at_opt += 1;
-								  split_needed = true;
-								  if (s[1] != 0 && s[1] != '@')
-								  { at_fn = s + 1;
-								    s += strlen(s) - 1;
-								  }
+        when '@': at_opt = s[1];
+        					if (at_opt != '@' && at_opt != '/' && at_opt != '?')
+        						explain();
+								  split_needed = s[2] == 0;
+								  if (!split_needed)
+								  	at_fn = s + 2;
+									s += strlen(s) - 1;				// exit loop
 				when 'n': negprops = M_NOT;
 				when 'f':{Vint sargc = argc_;
 								  Vint sargix = argix_;
@@ -1093,9 +1094,8 @@ static void process_args()
   }
 }
 
-int main(
-	int	argc,
-	char ** argv)
+int main(	int	argc,
+					char ** argv)
 { fast Vint ix;
   invokenm = argv[0];
   if (argc <= 1)
@@ -1128,14 +1128,20 @@ int main(
       memset(&msd_stat, 0, sizeof(msd_stat));
 
       if (mygets0(&fnbuff[0], sizeof(fnbuff)-1) != OK)
-				break;
+      {	at_opt = 0;
+				continue;
+			}
 
       eny = fnbuff;
       fn = ".";
 
       if (eny[0] == 0)
         continue;
-      if (at_opt == 1)
+      if      (at_opt == '/')
+      {	add_cell(&re_exp, eny, (Byte)O_M_IC);
+      	continue;
+      }
+      else if (at_opt == '?')
       { ch = stat(fnbuff, &fstat_);
         if (ch != OK)
         { eprintf((char*)stderr, "File not found %s (%x)\n", eny, ch);
@@ -1195,13 +1201,13 @@ int main(
 
     { Set16 is_diry = msd_attrs & (MSD_DIRY+MSD_POST);
     /*eprintf(null, "ATTS %s %d %x\n", eny, fnoffs, msd_attrs);*/
-      if     (not is_diry and
-	      (props[IX_AND ] != (props[IX_AND ] & msd_attrs) or
-	       props[IX_ANDN] != (props[IX_ANDN] & ~ msd_attrs) or
-	      (not(props[IX_OR]+props[IX_ORN] == 0 or 
-		  (props[IX_OR] & msd_attrs) or 
-		  (props[IX_ORN] & ~msd_attrs)))))
-	;
+      if (not is_diry and
+	    	  (props[IX_AND ] != (props[IX_AND ] & msd_attrs) or
+	      	 props[IX_ANDN] != (props[IX_ANDN] & ~ msd_attrs) or
+		      (not(props[IX_OR]+props[IX_ORN] == 0 or 
+				  (props[IX_OR] & msd_attrs) or 
+				  (props[IX_ORN] & ~msd_attrs)))))
+				;
       else
       { Set16 pset = want_file(&eny[fnoffs]);
         if (pset & M_DOPROC)
@@ -1222,11 +1228,11 @@ int main(
 #if S_MSDOS && S_WIN32 == 0
       if (not i_opt and not at_opt and typahead() and grabchar() == 'C'-'@')
       { fputserr("Interrupted");
-	myexit(0);
+				myexit(0);
       }
 #endif
       if (at_opt)
-	break;
+				break;
     }}
   }}
 

@@ -22,7 +22,7 @@ LIB=$(LBC)
 LIB=$(LBC);$(C_KIT)/8.1/Lib/winv6.3/um/x86;$(C_KIT)/10/Lib/10.0.10150.0/ucrt/x86
 export LIB
 
-Path :=c:/bin;$(C_HOME)/bin;$(C_HOME)/lib;$(C_HOME)/../Common/msdev98/bin/;\
+Path :=c:/bbin;$(C_HOME)/bin;c:\windows\system32;$(C_HOME)/lib;$(C_HOME)/../Common/msdev98/bin/;\
 export Path
 
 ifneq ($(DEBUG),1)
@@ -409,11 +409,11 @@ sprintf.obj: ../../../common/sprintf.c
 	$(CC) $(CFLAGS) -I.. -c -osprintf.obj ../../../common/sprintf.c
 
 ssprintf.obj: ../../../common/sprintf.c
-	cp ../../../common/sprintf.c ssprintf.c
+	cmd.exe /q /c "copy ..\..\..\common\sprintf.c ssprintf.c"
 	$(CC) $(CFLAGS) -ossprintf.obj -DUSE_T -I.. -I../../../common -c ssprintf.c
 
 sprint3.obj: ../../../common/sprintf.c
-	copy ..\..\..\common\sprintf.c sprint3.c
+	cmd.exe /q /c "copy ..\..\..\common\sprintf.c sprint3.c"
 	$(CC) $(CFLAGS) -DALL_32BIT=1 -I.. -I../../../common -c sprint3.c
 	del sprint3.c
 

@@ -99,7 +99,7 @@ prog/vs2019/popen/popen.vcxproj
 prog/vs2019/popen/popen.vcxproj.filters
 prog/vs2019/popen/popen.vcxproj.user
 prog/wincon/build.h
-prog/wincon/makefile
+prog/wincon/Makefile__
 prog/words.c
 sh/BuildLibraries
 sh/EDPATH

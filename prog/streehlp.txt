@@ -2,7 +2,9 @@ ll { options } { directory }*                 Version 1.06
          -\\       -- Use \\ as separator
          -f        -- read these options from stdin
          @v        -- read these options from environment variable v
-        -@{@}{file}-- read filenames {any names} from stdin {file}
+        -@@ {file} -- read any names from stdin {file}
+        -@? {file} -- read file names from stdin {file}
+        -@/ {file} -- read match file patterns from stdin {file}
        -o{12} file -- redirect output
 ACTIONS: 
 	 -a	   -- Prefix output with Grep pattern

@@ -16,21 +16,6 @@ extern Char exc_str[120];
 #define M_NOT 2
 #define M_IC  4
 #define M_MATCHWORD 8
-
-
-#if S_MSDOS
-/*
-void printf()
-
-{ fputserr("PRINTF");
-}
-*/
-void fprintf()
-
-{ fputserr("FPRINTF");
-}
-
-#endif
 
 Cc grep_line(
 	Char *   line,
