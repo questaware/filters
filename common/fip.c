@@ -20,7 +20,8 @@
   static char kbdq;			/* char we've already read	*/
 
 #if  S_MSDOS
-#include <dos.h>
+#include	<io.h>
+#include  <dos.h>
  extern union REGS rg;		/* cpu register for use of DOS calls */
  extern struct SREGS segreg;	/* cpu segment registers	     */
 #else

@@ -1,0 +1,31 @@
+ffg { options } { directory }* { -v }          Version 1.06
+   -\\         -- Use \\ as separator
+   -f          -- read these options from stdin
+   @v          -- read these options from environment variable v
+   -@{@}{file} -- read filenames {any names} from stdin {file}
+   -o{12} file -- redirect output
+ACTIONS: 
+   -a        -- Prefix output with Grep pattern
+   -i        -- Ask about each entry
+   -{SVlL}   -- No trailing /, very Verbose, long, very long
+   -v{v}{123}-- verbose, show # lines
+   -q        -- shorten names where possible
+   -u        -- Traverse symbolic links.
+   -#        -- Count
+   -{cC}{?b}{v} dir -- diff to dir/file (C:verbose)(?:if there)(blanks)(v:diff)
+   -d{y}            -- Delete {no confirm}
+   -{e|p|pe} pat    -- command to execute/print; %s: whole,%t: tail
+   -T     -- Change diectory to the leaves
+SELECTION CONDITIONS or'd:
+   -{-+01234}   -- Show directories first, last, recurse to level n
+   -/{u} rexp   -- match file u: ignore case, TRAILING / => directory
+   -/{rahs}     -- Read,Arch,Hidden,Sys bit set, n : not set
+   -{n}{gG} pat -- {not} Grep for pattern, G:ignore case, space after {gG}:word
+   -s {-}size   -- Greater{/Less} than size, (try -#s 1)
+   -m{b} date   -- New{/Old}er:{{{yy}yy{/}mm{m}{/}dd}{/{hh:mm:ss}}|now|today}
+SELECTION CONDITIONS and'd:
+   +n/{u} rexp  -- and not match file
+   +{n}/{rahs}  -- and {not} properties set
+   +{n}(gG) pat -- and {not} contains pattern (<double quote> must be escaped)
+where a leading -g may be omitted and -//pat is equivalent to -/ *pat
+ try: fd pat -\ -//.cpp -e 'type %s'

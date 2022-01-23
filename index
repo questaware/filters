@@ -22,6 +22,7 @@ h/base.h
 h/defs_h
 h/logmsg.h
 index
+fdindex
 cat.txt
 prog/apply.c
 prog/bin2hex.c
@@ -54,7 +55,7 @@ prog/ibmpc/build.h
 prog/ibmpc/makefile
 prog/invtags.c
 prog/lbltofile.cpp
-prog/ll.c
+prog/ffg.c
 prog/lock.c
 prog/lw.c
 prog/mycomm.c
@@ -69,7 +70,7 @@ prog/spath.c
 prog/spread.c
 prog/srchpath.c
 prog/srename.c
-prog/streehlp.txt
+prog/ffghlp.txt
 prog/striphtm.c
 prog/subproc.c
 prog/sumup.c
@@ -87,6 +88,7 @@ prog/trans.c
 prog/uniq.c
 prog/unix/build.h
 prog/unix/makefile
+prog/unix/filters.spec
 prog/unlink.c
 prog/untab.c
 prog/usedict.c

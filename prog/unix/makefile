@@ -14,7 +14,18 @@ MINCFLAGS= -g -I.
 #CFLAGS= -O -D_INCLUDE_HPUX_SOURCE -D_INCLUDE_POSIX_SOURCE -DINCLUDE_POSIX4_SOURCE -D_INCLUDE_XOPEN_SOURCE -D_STDARG_INCLUDED -Dhp -I. -I../$(SRC)
 #LFLAGS=-O
 
-all: ll
+all: ffg chrad
+
+ffg.i: ../ffg.c
+	$(CC) $(CFLAGS) -S ../ffg.c
+
+ffg.o: ../ffg.c 
+	$(CC) -c $(CFLAGS) ../ffg.c
+
+FFGOBJS=args.o strutil.o re.o msdir.o msera.o ssprintf.o diffs.o getline.o tad.o flook.o fip.o grutil.o
+ffg: ../ffg.c $(FFGOBJS)
+	sed -e 's/^/"/' -e 's/$$/"/' ../ffghlp.txt > helptxt.h
+	$(CC) $(CFLAGS) $(LFLAGS) -o ffg ../ffg.c $(FFGOBJS)
 
 hello: ../hello.c
 	$(CC) $(CFLAGS) -o hello ../hello.c strutil.o re.o msdir.o msera.o sprintf.o diffs.o getline.o tad.o flook.o fip.o grutil.o
@@ -180,8 +191,8 @@ di: ../dostou.c msfname.o
 sieve: ../sieve.c
 	$(CC) $(CFLAGS) -o sieve ../sieve.c
 
-chrad: ../chrad.c
-	$(CC) $(CFLAGS) -o chrad ../chrad.c
+chrad: ../chrad.c sprintf.o
+	$(CC) $(CFLAGS) -o chrad ../chrad.c sprintf.o
 
 uniq: ../uniq.c
 	$(CC) $(CFLAGS) -o uniq ../uniq.c
@@ -218,9 +229,6 @@ spath.o: ../spath.c
 
 spath: spath.o strmpath.o msdir.o sprintf.o
 	$(LK) $(LFLAGS) -o spath spath.o strmpath.o msdir.o sprintf.o -lm -L/usr/lib/libc.a -L /opt/ba/lib
-
-ll.i: ../ll.c
-	$(CC) $(CFLAGS) -S ../ll.c
 
 strutil.o: ../../util/strutil.c
 	$(CC) $(CFLAGS) -c -o strutil.o ../../util/strutil.c
@@ -284,13 +292,6 @@ msera.o: ../../common/msera.c
 flook.o: ../../common/flook.c
 	$(CC) $(CFLAGS) -I. -I../../util -c ../../common/flook.c
 
-ll.o: ../ll.c 
-	$(CC) -c $(CFLAGS) ../ll.c
-
-STREEOBJS=args.o strutil.o re.o msdir.o msera.o ssprintf.o diffs.o getline.o tad.o flook.o fip.o grutil.o
-ll: ../ll.c $(STREEOBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o ll ../ll.c $(STREEOBJS)
-
 docrypt.o: ../docrypt.c
 	$(CC) $(CFLAGS) -c ../docrypt.c
 
@@ -304,11 +305,19 @@ logmsg.o: ../../util/logmsg.c
 	$(CC) $(CFLAGS) -c -o logmsg.o ../../util/logmsg.c
 
 lout: logmsg.o ../../util/lout.cpp
-	CC $(CFLAGS) -I. -o lout logmsg.o -DSTANDALONE=1 ../../util/lout.cpp
+	$(CC) $(CFLAGS) -I. -o lout logmsg.o -DSTANDALONE=1 ../../util/lout.cpp
 
+rpm:
+	rm -rf ~/rpmbuild
+	mkdir -p ~/rpmbuild/BUILD
+	mkdir -p ~/rpmbuild/RPMS
+	mkdir -p ~/rpmbuild/SRPMS
+	mkdir -p ~/rpmbuild/SPECS
+	cp filters.spec ~/rpmbuild/SPECS/
+	mkdir -p ~/rpmbuild/SOURCES
+	cd ../..;tar cfz ~/rpmbuild/SOURCES/filters-1.2.tar.gz -T fdindex
 
-
-CLEAN :
+clean :
 	rm -f *.o
 
 

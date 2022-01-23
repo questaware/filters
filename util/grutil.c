@@ -1,4 +1,5 @@
 #include  <ctype.h>
+#include  <string.h>
 #include  "build.h"
 #include  "grutil.h"
 
@@ -19,6 +20,7 @@ extern Char exc_str[120];
 
 
 #if S_MSDOS
+#ifndef _DEBUG
 /*
 void printf()
 
@@ -30,6 +32,7 @@ void fprintf()
 { fputserr("FPRINTF");
 }
 
+#endif
 #endif
 
 Cc grep_line(

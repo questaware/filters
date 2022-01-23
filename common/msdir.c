@@ -14,6 +14,7 @@
 
 #if   S_WIN32
 # include        <windows.h>
+#include         <io.h>
 /*# include        <dir.h>*/
 # include        <direct.h>
 #elif S_MSDOS
@@ -455,8 +456,7 @@ Cc msd_push()
 
 Char * msd_pop()
 
-{ int trash;
-  msd_curr = null;
+{ msd_curr = null;
 /*eprintf(null, "Pop (%d) %s\n", msd_ix, msd_path);*/
   
   msd_ix -= 1;
@@ -518,13 +518,14 @@ Char * msd_pop()
     /*eprintf(null, "TGT %s\n", &enynm[0]);*/
       
       while (true)
-      { fast Char * t = &enynm[0];
-  	Char * s = &dta[0x1e];
+			{ int trash;
+      	Char * t = &enynm[0];
+		  	Char * s = &dta[0x1e];
       /*eprintf(null, "DD %s : %s DD\n", t, s);*/
         for (; (i = *s) != 0 and toupper(*t) == toupper(i); ++s)
-  	  ++t;
+  			  ++t;
         if (*t == 0)
-  	  break;
+		  	  break;
         res = msd_nfile(&trash);   
         if (res == null)
         {
@@ -636,7 +637,7 @@ Cc msd_init(
 #if S_MSDOS == 0 || S_WIN32
     msd_chd = -1;
     msd_ochd[0] = -1;
-    msd_nlink[0] = -1000000;
+    msd_nlink[0] = -10000;
     msd_slnest = 0;
     getcwd(&msd_startdir[0], sizeof(msd_startdir)-2);
     strcat(&msd_startdir[0], "/");
@@ -709,9 +710,9 @@ Cc msd_init(
     if      (!msd_nochdir && ((msd_props & MSD_CHGD) or msd_ix == 0))
     {
 #if S_WIN32
-      char cwdb[300];
+    //char cwdb[300];
       fd = chdir(dir);
-    /*printf("chdir %d %s CWD %s\n", fd, dir, getcwd(cwdb, 299));*/
+    //printf("chdir %d %s CWD %s\n", fd, dir, getcwd(cwdb, 299));
 #elif S_LINUX
       fd = dirfd(msd_curr);
 #else
@@ -904,7 +905,7 @@ static Bool extract_fn(int * fnoffs)
 #if NOPUSHPOP == 0
   if (msd_nochdir == 0 and msd_slnest == 0 and msd_chd < msd_ix - 1 and
       (msd_dp->d_type == DT_DIR || msd_dp->d_type == DT_UNKNOWN)
-                       and msd_nlink[msd_ix] <= -1000000+1)/*stat the parent*/
+                       and msd_nlink[msd_ix] <= -10000+1)/*stat the parent*/
   { char sch = msd_path[msd_lenstk[msd_ix]];
     msd_path[msd_lenstk[msd_ix]] = 0;
     if (TRYLSTAT(msd_relpath, &msd_stat)!= OK)
@@ -935,7 +936,7 @@ static Bool extract_fn(int * fnoffs)
     msd_a = 0;
     msd_stat.st_ino = 0;
 #endif
-    msd_stat.st_nlink = -1000000;
+    msd_stat.st_nlink = -10000;
   }
 #if S_WIN32 == 0
   else
@@ -1001,19 +1002,20 @@ static Bool extract_fn(int * fnoffs)
 /*eprintf(null, "M %x.%s %s\n", match[0], match, &dta[0x1e]);*/
 /*eprintf(null, msd_attrs & MSD_DIRY ? "YY %s %x %x\n"
 			      : "DD %s %x %x\n", msd_path, msd_attrs, 0**msd_stat.st_mode**);*/
-{ 
+
 #if S_MSDOS
-  register int ix;
   strcpy(&rbuf[0], &msd_path[0]);
   
 #if S_WIN32 == 0
+{ int ix;
   for (ix = -1; rbuf[++ix] != 0; )
     if (in_range(rbuf[ix], 'A', 'Z'))
        rbuf[ix] += 'a' - 'A';
+}
 #endif
 #endif
   return true;
-}}}
+}}
 
 
 

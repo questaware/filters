@@ -41,7 +41,11 @@ void main(argc, argv)
     
     sscanf(argv[1], format, &cval);
     
+#if S_MSDOS
     eprintf(null,
+#else
+    printf(
+#endif
          "%12s %12lo %10ld  %8lx  %7ld   %c\n", 
                           titles[ix], cval,cval,cval,
 			  cval>>10, cval < ' ' ? ' ' : cval);

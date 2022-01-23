@@ -21,6 +21,8 @@
 #include "build.h"
 #if S_MSDOS == 0
 #include <stdlib.h>
+#else
+#include <io.h>
 #endif
 
 #include "strutil.h"
@@ -362,9 +364,10 @@ char * flook(
 **********************************************************/
 Char * find_sys_root(Char * name_, Char * suffix, Char * envvar)
 
-{ Char nml_name[1024];
-  Char work_space[1024];
+{ 
 #if 0
+	Char nml_name[1024];
+  Char work_space[1024];
   int rc = nmlze_fname(&nml_name[0], name_, &work_space[0]);
   Char * name =        &nml_name[0];
 #else

@@ -27,7 +27,7 @@
 
 #include "build.h"
 #if S_MSDOS
-/*#include <io.h>*/
+#include <io.h>
 #define msd_isslink() 0
 #define O_M_IC 4
 #include <io.h>
@@ -146,26 +146,25 @@ FILE * stdip;
 
 static void explain(void)
 
-{ 
-#if 0
-#if S_MSDOS
-    shellprog("streehlp.bat");
+{
+#if S_MSDOS == 0
+	const char help = 
+#include "helptxt.h"
+		;
+	fputsout(help);
 #else
-    system("streehlp.bat");
-#endif
-#else
-{   static const char helpfn[] = "Cannot find streehlp.txt";
-    Char * afn = flook('p', &helpfn[12]);
-    if (afn == null)
-      fputsout(helpfn);
-    else
-    { int ip = open(afn, O_RDONLY);
-      if (ip > 0)
-      { Vint ct;
-	while ((ct = read(ip, &cmd_line[0], sizeof(cmd_line))) > 0)
-	  write(1, cmd_line, ct);
-      }
-    }
+{	static const char helpfn[] = "Cannot find ffghlp.txt";
+	Char * afn = flook('p', &helpfn[12]);
+	if (afn == null)
+		fputsout(helpfn);
+	else
+	{ int ip = open(afn, O_RDONLY);
+		if (ip > 0)
+		{ Vint ct;
+			while ((ct = read(ip, &cmd_line[0], sizeof(cmd_line))) > 0)
+				write(1, cmd_line, ct);
+		}
+	}
 }
 #endif
   exit(0);
@@ -480,13 +479,13 @@ static void doit(
         free(cmp_file);
         if      (dc == OK)
         { if (v_opt)
-	    msg_str("Same ", sheny);
-	  same_ct += 1;
-	  return;
+				    msg_str("Same ", sheny);
+				  same_ct += 1;
+				  return;
         }
         else 
         { if      (dc == 1)
-	  { diff_ct += 1;
+				  { diff_ct += 1;
           }
           else if (dc == -1)
           { eprintf(null, "Cannot read file %s\n", eny);
@@ -628,7 +627,7 @@ static void doit(
     { if (not at_opt and (msd_attrs & MSD_POST))
       { /*eprintf(null, "Pend %s %x\n", eny, msd_attrs);*/
         pending_delete = not g_filter;
-	strcpy(&cmd_line[0], eny);
+				strcpy(&cmd_line[0], eny);
       }
       else
       { if (v_opt) 
@@ -643,9 +642,9 @@ static void doit(
         }
 #endif
       { Cc cc = erase_file(fn+1, ' ');
-	if (cc != OK)
-	{ eprintf(null, "CD %d %s\n", errno, eny);
-        }
+				if (cc != OK)
+				{ eprintf(null, "CD %d %s\n", errno, eny);
+		    }
       }}}
     }
   }
@@ -662,18 +661,18 @@ static void doit(
       #define ix ch
       for (ix = -1; ++ix < e_fmt_ix; )
       { fmt_cmd(ix, sheny);
-	if (e_fmt_kind[ix] == 'p')
-	{  msg_str(cmd_line, "");
-	}
-	else
-	{  fflush(stdout);
+				if (e_fmt_kind[ix] == 'p')
+				{  msg_str(cmd_line, "");
+				}
+				else
+				{  fflush(stdout);
 #if S_MSDOS
-	   shellprog(cmd_line);
+				   shellprog(cmd_line);
 #else
-	   system(cmd_line);
+			 	  system(cmd_line);
 #endif
-	}
-      }
+				}
+		  }
     }
     else
     { if (long_opt != 0)
@@ -1098,13 +1097,15 @@ int main(
   stdip = stdin;
   tzset();
 
-/*printf("Got1\n");*/ 
   set_args(argc, argv, stdin);
-/* printf("GO\n"); */
-  process_args();
-/* printf("DONE\n");*/
+  if (strcmp(argv[argc-1], "-v") == 0)
+		v_opt = 1;
 
-/*printf("Got 2\n");*/
+  if (strcmp(argv[argc-1], "-V") == 0)
+		vv_opt = 1;
+
+  process_args();
+
   if (at_fn != NULL)
   { stdip = fopen(at_fn, "r");
     if (stdip == NULL)
