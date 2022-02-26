@@ -186,13 +186,13 @@ static Cc mygets0(Char * tgt_, Vint maxlen)
 { Char * tgt = tgt_;
   fast Vint ct;
 
-  while ((ct = read(fileno(stdip), tgt, 1)) > 0 and *tgt > 'J'-'@' and --maxlen > 0)
+  while ((ct = read(fileno(stdip), tgt, 1)) > 0 && *tgt > 'J'-'@' && --maxlen > 0)
   { if (*tgt != 'M'-'@')
       ++tgt;
   }
 
   *tgt = 0;
-  return ct <= 0 and tgt == tgt_ ? HALTED : OK;
+  return ct <= 0 && tgt == tgt_ ? HALTED : OK;
 }
 
 
@@ -231,8 +231,8 @@ void add_cell(Patcell * list_ref,
     }
 #endif
     strcpy(&pcell->c[0], str);
-    if (q && len > 0)
-      pcell->c[--len] = 0;
+//  if (q && len > 0)
+//    pcell->c[--len] = 0;
 
     while ((props & M_MATCHWORD) && len > 0 && isspace(pcell->c[len-1]))
       pcell->c[--len] = 0;
@@ -263,7 +263,7 @@ static void fmt_cmd(
     int    ix,
     char * eny)
 { int tl = strlen(eny);
-  while (--tl >= 0 and eny[tl] != '/' and eny[tl] != '\\')
+  while (--tl >= 0 && eny[tl] != '/' && eny[tl] != '\\')
     ;
   ++tl;
   
@@ -314,26 +314,26 @@ static Set16 want_file(char * eny)
   want_diry = is_diry & prepost_opts;
 
   if (re_exp != null) 
-       /* fn_or | and_res** or is_diry and not d_opt **dirys are explicitly selected*/
+       /* fn_or | and_res** || is_diry && not d_opt **dirys are explicitly selected*/
   { Vint inneed = 0;
     Vint no_ct = 0;
     Patcell pc;
     for (pc = re_exp; pc != null;  pc = pc->next)
     { 
-    /*eprintf(null, "%d Try %s %s\n", inneed, &eny[0], pc->c); */
-      
-      if      (*match_fn_re_ic(&eny[0], pc->c, (pc->props& M_IC)) == 0
+			char ch = *match_fn_re_ic(&eny[0], pc->c, (pc->props& M_IC));       
+      if      (ch == 0
              &&((pc->props ^ is_diry) & MSD_DIRY) ==0 )
-      {/*eprintf(null, "GOT eny\n");*/
+      {
         if (pc->props & M_NOT)
-	  return 0;
+				  return 0;
 	
-	inneed = 1;
+				inneed = 1;
       }
+      else if (ch == '/' && !(pc->props & M_NOT))
+      	return M_DOPROC+M_DOPUSH+MSD_MATCHED;
       else
-      { /*eprintf(null, "NGOT %s\n", pc->c);*/
-        if (!(pc->props & M_NOT))
-	  no_ct += 1;
+      { if (!(pc->props & M_NOT))
+				  no_ct += 1;
       }
     }
       
@@ -345,12 +345,12 @@ static Set16 want_file(char * eny)
     else 
     { if (! is_diry)
         return 0;
-      if (want_diry == 0 && (is_diry & MSD_POST) && not d_opt)
+      if (want_diry == 0 && (is_diry & MSD_POST) && ! d_opt)
         return 0;
     }
   }
   else 
-    if (want_diry == 0 and (is_diry & MSD_POST) and not d_opt)
+    if (want_diry == 0 && (is_diry & MSD_POST) && ! d_opt)
       return 0;
   
 #if 0
@@ -361,14 +361,14 @@ static Set16 want_file(char * eny)
     return want_diry ? M_DOPROC+M_DOPUSH : M_DOPUSH;
     
   if ((msd_simple & MSD_SIMPLE) == 0)
-  { if ((unsigned long)msd_stat.st_size < (unsigned long)s_lo_opt or
+  { if ((unsigned long)msd_stat.st_size < (unsigned long)s_lo_opt ||
         (unsigned long)msd_stat.st_size > (unsigned long)s_hi_opt)
       return 0;
 /*  if (date_e_opt != 0)
     { eprintf(null, "File time %s %lx %lx\n", eny, msd_stat.st_mtime, date_e_opt);
       eprintf(null, "    %x\n",    date_e_opt-msd_stat.st_mtime);
     }*/
-    if (date_e_opt > 0 and (unsigned long)msd_stat.st_mtime <= date_e_opt ||
+    if (date_e_opt > 0 && (unsigned long)msd_stat.st_mtime <= date_e_opt ||
                            (unsigned long)msd_stat.st_mtime >= date_l_opt)
        return 0;
   }
@@ -377,6 +377,7 @@ static Set16 want_file(char * eny)
 
 
 static void doit(
+	Set16		pset,
 	char *	diry,
 	char *	eny,
 	Vint	dirlen)
@@ -397,8 +398,8 @@ static void doit(
 
 /*printf("Doit: %s %s\n", diry, eny);*/
 
-  if ((i_opt or d_opt == true) and (not is_diry or want_diry))
-  { if (split_needed and d_opt == true or i_opt == 1)
+  if ((i_opt || d_opt == true) && (! is_diry ||want_diry ||(pset & MSD_MATCHED)))
+  { if (split_needed && d_opt == true || i_opt == 1)
     { stdip = splitip();
       split_needed = false;
     }
@@ -420,15 +421,14 @@ static void doit(
       fputserr("\r\n");
       if      (ch == ' ')
 				i_opt = false;
-      else if (ch == A_CR or ch == A_LF or
-	       ch == 'Y'  or ch == 'y'	/*or ch == 'o'*/)
-
-	;
+      else if (ch == A_CR || ch == A_LF ||
+	       ch == 'Y'  || ch == 'y'	/*or ch == 'o'*/)
+				;
       else if (ch <= 'Z' - '@')
       { myexit(0);
       }
       else
-	return;
+				return;
     }
   }
   
@@ -436,7 +436,7 @@ static void doit(
   Cc cc = OK;
 
   if (is_diry)
-    cc = not want_diry ? NOT_FOUND : OK;
+    cc = want_diry || (pset & MSD_MATCHED) ? OK : NOT_FOUND;
   else 
   { file_ct += 1;
     file_tot_sz_lo += msd_stat.st_size;
@@ -445,10 +445,10 @@ static void doit(
     if (cmp_dir != null)
     { Vint leny_ = strlen(eny);
       Vint leny;
-      for (leny = -1; (ch = eny[++leny]) != 0 and
+      for (leny = -1; (ch = eny[++leny]) != 0 &&
 		       ch == diry[leny]; )
         ;
-      if (leny > 0 and ch == sep_ch)
+      if (leny > 0 && ch == sep_ch)
         ++leny;
       
     { Vint cmp_dirl = strlen(cmp_dir);
@@ -462,8 +462,8 @@ static void doit(
       else
       { strcpy(&cmp_file[0], cmp_dir);
         ch = cmp_file[cmp_dirl_-1];
-        if (ch != '/'  and
-	    ch != '\\' and
+        if (ch != '/' &&
+	    ch != '\\' &&
 	    ch != ':')
 	  cmp_file[cmp_dirl_++] = sep_ch;
         strcpy(&cmp_file[cmp_dirl_], &eny[leny]);
@@ -492,11 +492,11 @@ static void doit(
             return;
           }
           else
-          { if (eny[0] == '.' and (eny[1] == '/' or eny[1] == '\\'))
+          { if (eny[0] == '.' && (eny[1] == '/' || eny[1] == '\\'))
               eny += 2;
           { Char * t = eny-1;
             while (*++t != 0)
-              if (in_range(*t, 'a', 'z') or in_range(*t, 'A', 'Z'))
+              if (in_range(*t, 'a', 'z') || in_range(*t, 'A', 'Z'))
                 *t ^= 0x20;
 
             if (e_fmt_ix == 0  && (verb_comp & M_IFTHERE) == 0)
@@ -551,13 +551,13 @@ static void doit(
         for (pcell = gr_pat;	pcell != null;  pcell = pcell->next)
 				  pcell->props &= ~M_MARK;
 
-        while (v_opt or ct_opt or occ_ct == 0)
+        while (v_opt || ct_opt || occ_ct == 0)
         { Char * ln = ffgetline(&linebuf, ip);	/* For each line */
 				  if (ln == null)
 				    break;
 
 				  for (pcell = gr_pat; pcell != null;  pcell = pcell->next)
-				  { if ((pcell->props & M_AND) and and_res < 0)
+				  { if ((pcell->props & M_AND) && and_res < 0)
 				      and_res = true;
 				    cc = grep_line(ln, pcell->c, (Byte)(pcell->props&~(M_MARK+M_SIMPLE)));
 				    if (cc == OK)
@@ -605,7 +605,7 @@ static void doit(
 				    if ((props & (M_NOT+M_AND+M_MARK)) == M_AND)
 				      and_res = false;	  /* required => false */
 				  }
-				  if (or_res or and_res)
+				  if (or_res || and_res)
 				  { cc = OK;
 				    if (v_opt)
 				      msg_str(sheny, "");
@@ -624,9 +624,9 @@ static void doit(
     if (msd_attrs & MSD_DIRY)
       ;
     else
-    { if (not at_opt and (msd_attrs & MSD_POST))
+    { if (! at_opt && (msd_attrs & MSD_POST))
       { /*eprintf(null, "Pend %s %x\n", eny, msd_attrs);*/
-        pending_delete = not g_filter;
+        pending_delete = ! g_filter;
 				strcpy(&cmd_line[0], eny);
       }
       else
@@ -714,9 +714,9 @@ static void doit(
 #endif
 				fputsout(sheny);
 	    }
-      else if (gr_pat == null or not v_opt)
+      else if (gr_pat == null || ! v_opt)
 				fputsout(sheny);
-      if (ct_opt and occ_ct > 0 and not v_opt)
+      if (ct_opt && occ_ct > 0 && ! v_opt)
       { eprintf(null, "\t: %d", occ_ct);
       }
       if (long_opt != 0)
@@ -730,7 +730,7 @@ static void doit(
 				  fputsout(" ");
 				eprintf(null, "\t%9ld", msd_stat.st_size);
       }
-      if (gr_pat == null or not v_opt)
+      if (gr_pat == null || ! v_opt)
 				fputsout("\n");
     }
   }
@@ -782,7 +782,7 @@ static void process_args()
     { char * var = getenv(s+1);
     /*printf("GE %s %s\n", s+1, var);*/
       if (var == NULL)
-      { printf("\nArg variable not found %s\n", s+1);
+      { printf("\nArg variable ! found %s\n", s+1);
         explain();
       }
       else
@@ -791,10 +791,10 @@ static void process_args()
       }
       continue;
     }
-    if      (*s == '/' and s[1] == '/')
+    if      (*s == '/' && s[1] == '/')
       --s;
-    else if (*s != 0 and *s != '-' and *s != '+')
-    { if (argix_ > 1 or argc_ <= 2)
+    else if (*s != 0 && *s != '-' && *s != '+')
+    { if (argix_ > 1 || argc_ <= 2)
       { --argix_;
 				break;
       }
@@ -860,14 +860,14 @@ static void process_args()
 								   }
 								   e_fmt_kind[e_fmt_ix] = ch;
 								   e_fmt[e_fmt_ix++] = get_ee(true);
-								   if (ch == 'e')
-								     msd_simple |= MSD_NOCHD;
+//							   if (ch == 'e')
+//							     msd_simple |= MSD_NOCHD;
 								   if (s[1] != ch && (s[1] == 'e' || s[1] == 'p'))
 								   { e_fmt_kind[e_fmt_ix] = s[1];
 								     e_fmt[e_fmt_ix] = strdup(e_fmt[e_fmt_ix-1]);
 								     ++e_fmt_ix;
 								     ++s;
-								     msd_simple |= MSD_NOCHD;
+//							     msd_simple |= MSD_NOCHD;
 								   }
 
 				when 'T':  msd_simple |= MSD_CHGD;
@@ -911,15 +911,15 @@ static void process_args()
 								       re_and += 1;
 								     else
 								       fn_or = true;
-								     if (conj == 0 and negprops != 0 or
-												 conj != 0 and negprops == 0)
+								     if (conj == 0 && negprops != 0 ||
+												 conj != 0 && negprops == 0)
 								       explain();
 								   }
 								 }
 				when 'o':  ch = *++s - '0';
 							     if (ch == '0')
 							       ch = 1;
-								   if (ch != 1 and ch != 2)
+								   if (ch != 1 && ch != 2)
 								     explain();
 				when 's':
 				case 'm':  msd_simple &= ~MSD_SIMPLE;
@@ -1052,7 +1052,7 @@ static void process_args()
 				when 'S':  nosl_opt = true;
 				when '-':  prepost_opts |= MSD_DIRY;
 				when '#':  ct_opt = true;
-				otherwise  if (not in_range(ch, '0','9'))
+				otherwise  if (! in_range(ch, '0','9'))
 								   { eprintf(null, ">%s<\n", s);
 								     explain();
 								   }
@@ -1067,7 +1067,7 @@ static void process_args()
     explain();
   }
 
-  if (re_exp == null and *(Int*)&props[0] == 0 and d_opt)
+  if (re_exp == null && *(Int*)&props[0] == 0 && d_opt)
   { props[IX_OR] |= MSD_ROFILE;
     props[IX_ORN] |= MSD_ROFILE;
   }
@@ -1156,7 +1156,7 @@ int main(
 				  fn = ".";
 				else
 				  break;
-      if (strcmp(fn, "..") == 0 and d_opt)
+      if (strcmp(fn, "..") == 0 && d_opt)
         continue;
       if (fn[0] == '-')
         explain();
@@ -1176,12 +1176,12 @@ int main(
 		}
 
   { int fnoffs=0;
-    Vint dirl = not q_opt or at_opt /*or ix>0 or argix_ != argc_-1*/
+    Vint dirl = ! q_opt || at_opt /*or ix>0 || argix_ != argc_-1*/
 									? 0 : strlen(fn)+1;
-    if (dirl > 0 and fn[dirl-2] == '/')
+    if (dirl > 0 && fn[dirl-2] == '/')
       --dirl;
     
-    while (at_opt or (eny = msd_nfile(&fnoffs)) != null or pending_delete)
+    while (at_opt || (eny = msd_nfile(&fnoffs)) != null || pending_delete)
     { if (pending_delete)
       { pending_delete = false;
         /*eprintf(null, "DOPT PEND %s %x\n", cmd_line);*/
@@ -1195,20 +1195,20 @@ int main(
 
     { Set16 is_diry = msd_attrs & (MSD_DIRY+MSD_POST);
     /*eprintf(null, "ATTS %s %d %x\n", eny, fnoffs, msd_attrs);*/
-      if     (not is_diry and
-	      (props[IX_AND ] != (props[IX_AND ] & msd_attrs) or
-	       props[IX_ANDN] != (props[IX_ANDN] & ~ msd_attrs) or
-	      (not(props[IX_OR]+props[IX_ORN] == 0 or 
-		  	(props[IX_OR] & msd_attrs) or 
+      if     (! is_diry &&
+	      (props[IX_AND ] != (props[IX_AND ] & msd_attrs) ||
+	       props[IX_ANDN] != (props[IX_ANDN] & ~ msd_attrs) ||
+	      (!(props[IX_OR]+props[IX_ORN] == 0 || 
+		  	(props[IX_OR] & msd_attrs) || 
 			  (props[IX_ORN] & ~msd_attrs)))))
 				;
       else
       { Set16 pset = want_file(&eny[fnoffs]);
         if (pset & M_DOPROC)
-				  doit(fn, eny, dirl);
-        if ((msd_attrs & MSD_DIRY & pset) and 
-				    (u_opt or !msd_isslink())  and
-	    			rec_clamp > 0 and (~msd_attrs & MSD_POST))
+				  doit(pset, fn, eny, dirl);
+        if ((msd_attrs & MSD_DIRY & pset) && 
+				    (u_opt || !msd_isslink())  &&
+	    			rec_clamp > 0 && (~msd_attrs & MSD_POST))
         { 
         /*eprintf(null, "MSDP(RPT) %s\n", eny);*/
 				  if (msd_push() == EDENIED && vv_opt)
@@ -1220,7 +1220,7 @@ int main(
       }
 
 #if S_MSDOS && S_WIN32 == 0
-      if (not i_opt and not at_opt and typahead() and grabchar() == 'C'-'@')
+      if (! i_opt && ! at_opt && typahead() && grabchar() == 'C'-'@')
       { fputserr("Interrupted");
 	myexit(0);
       }
@@ -1245,7 +1245,7 @@ int main(
   }
 
 /*
-  if (not same)
+  if (! same)
     fputs("Not Same", stderr);
 */
   myexit(diff_ct & 0xff);

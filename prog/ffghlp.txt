@@ -19,6 +19,8 @@ ACTIONS:
 SELECTION CONDITIONS or'd:
    -{-+01234}   -- Show directories first, last, recurse to level n
    -/{u} rexp   -- match file u: ignore case, TRAILING / => directory
+                    -/ name  => select the directory
+                    -/ name/ => require the directory in the full name
    -/{rahs}     -- Read,Arch,Hidden,Sys bit set, n : not set
    -{n}{gG} pat -- {not} Grep for pattern, G:ignore case, space after {gG}:word
    -s {-}size   -- Greater{/Less} than size, (try -#s 1)
