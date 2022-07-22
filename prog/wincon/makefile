@@ -66,6 +66,13 @@ all: ffg.exe chrad.exe
 ffg.i: ../ffg.c
 #	$(CC) $(CFLAGS) -I.. -E ../../ffg.c
 
+notsed.exe : ../../notsed.c
+	$(CC) -o notsed.exe ../../notsed.c
+
+ffg.obj: notsed.exe ../../ffg.c 
+	type ..\..\ffghlp.txt | .\notsed.exe > helptxt.h
+	$(CC) -I. -I../ -I../../common/ $(CFLAGS) -c ../../ffg.c
+
 FFGO=strutil.obj args.obj re.obj msdir.obj msexec.obj msera.obj \
 ssprintf.obj diffs.obj getline.obj tad.obj \
 flook.obj fip.obj grutil.obj
@@ -91,6 +98,9 @@ whoami.exe: ../../whoami.c
 
 literal.exe: ../../literal.c
 	$(CC) $(CFLAGS) -I.. -o literal.exe ../../literal.c
+
+edpath.exe: ../../edpath.c re.obj
+	$(CC) $(CFLAGS) -I.. -o edpath.exe ../../edpath.c re.obj
 
 getcalls.exe: ../../getcalls.cpp
 	$(CC) $(CFLAGS) -GX -I.. -o getcalls.exe ../../getcalls.cpp
@@ -290,6 +300,9 @@ spread.exe: spread.obj sprint3.obj
 
 spath.exe: spath.obj strmpath.obj msdir.obj
 	$(CC) $(LFLAGS) spath.obj strmpath.obj msdir.obj $(LIBS)
+
+re.obj: ../../../util/re.c
+	$(CC) $(CFLAGS) -c -ore.obj -I.. ../../../util/re.c
 
 flook.obj: ../../../common/flook.c
 	$(CC) $(CFLAGS) -oflook.obj -I.. -I../../../util -c ../../../common/flook.c

@@ -33,8 +33,8 @@ Char * match_re(
     else if (*pat == '^')
     { Char pch = *++pat;
       if ((in_range(pch, '@','Z') ? pch-'@'   :
-	   in_range(pch, 'a','z') ? pch-'a'+1 : pch) != *tlt)
-	pass = false;
+				   in_range(pch, 'a','z') ? pch-'a'+1 : pch) != *tlt)
+				pass = false;
     }
     else if (*pat == '[')
     { Bool compl_set = *++pat == '^';
@@ -62,7 +62,7 @@ Char * match_re(
       else
       { repeat = 0;
         if (*pat == '?')
-	  ++pat;
+	 				++pat;
       }
     }
     else
@@ -73,7 +73,7 @@ Char * match_re(
           break;
       }
       else
-	break;
+				break;
       repeat = 0;
       ++pat;
       if (*pat == 0)

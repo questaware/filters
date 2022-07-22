@@ -2,13 +2,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <limits.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <map>
 #include "build.h"
 #if S_MSDOS == 0
 #include <unistd.h>
 #endif
-#include "../../util/h/strmpath.h"
+#include "../../util/strmpath.h"
 
 
 
@@ -48,6 +50,10 @@ int main(Vint argc, Char **argv)
 
   Set opts = 0;
   Bool u_opt = true;
+	int incix = 0;
+  Char pathbuf[10000];
+  pathbuf[0] = ':';
+  pathbuf[1] = 0;
   
   for (; argsleft > 0 and argv_[0][0] == '-'; --argsleft)
   { Char * flgs;
@@ -64,6 +70,27 @@ int main(Vint argc, Char **argv)
         opts |= M_PRT;
       else if (*flgs == 'x')
         opts |= M_EOPT;
+      else if (*flgs == 'v')
+        opts |= M_VOPT;
+      else if (*flgs == 'I')
+      { char * inc = flgs+1;
+      	int sl = strlen(inc);
+      	if (sl == 0)
+      	{	++argv_;
+      		--argsleft;
+      		if (argsleft == 0)
+      			continue;
+      		inc = argv_[0];
+      		sl = strlen(inc);
+      	}
+      	pathbuf[incix] = ':';
+      	
+      	if (incix+sl < sizeof(pathbuf) - 1)
+      	{ strcpy(pathbuf+incix+1, inc);
+      		incix += sl + 1;
+      	}
+      	break;
+      }
       else
       { explain();
       }
@@ -73,8 +100,7 @@ int main(Vint argc, Char **argv)
 { Char * filename = argv_[0];
   Char * path = getenv("PATH");
   Char * res;
-  Char pathbuf[10000];
-  pathbuf[0] = 0;   
+  int got = 0;
 
   if (opts & M_PRT)
   { printf("Path:%s\n", path);
@@ -88,15 +114,8 @@ int main(Vint argc, Char **argv)
   if (argsleft > 1)
   { /*if (path != NULL)
       strcpy(pathbuf, path);*/
-    for (; --argsleft > 0; ++argv_)
-    { char * apath = argv_[1];
-      if (apath[0] == '-' && apath[1] == 'I')
-        apath += 2;
-      if (pathbuf[0] != 0)
-        strcat(pathbuf, ":");
-      strcat(pathbuf, apath);
-    }
-    path = pathbuf;
+    path = pathbuf[1] != 0 ? pathbuf+1 : argv_[1];
+    
     if (strchr(path,'/') == NULL && 
         strchr(path,'\\') == NULL)
     { char * npath=getenv(path);
@@ -109,6 +128,34 @@ int main(Vint argc, Char **argv)
       path = npath;
     }
   }
+
+{ std::map<std::string, int> dict;
+
+	char * newpath = (char*)malloc(strlen(path)+1);
+	char * stt = path;
+	*newpath = 0;
+	for (char * s = path - 1; ++s; )
+	{ char ch = *s;
+		if (ch == 0 || ch == ':')
+		{ *s = 0;
+			if (dict.find(stt) == dict.end())
+			{ dict[stt] = 1;
+				strcat(strcat(newpath, stt), ":");
+			}
+			if (ch == 0)
+				break;
+			stt = s + 1;
+		}
+	}
+
+	path = newpath;
+//opts |= 0x100000;
+}
+
+	if (opts & M_PRT)
+	{ printf("File %s Path %s\n", filename, path);
+		exit(0);
+	}
 
 #if S_MSDOS
   for (res = filename; *res != 0; ++res)
@@ -127,10 +174,15 @@ int main(Vint argc, Char **argv)
         if (*t == '/') *t = '\\';
     }
 
+		got = 1;
     sho(res);
     if (u_opt)
       break;
   }
 
+	if ((opts & M_VOPT) && !got)
+		sho("Not found");
+
   return 0;
 }}}
+

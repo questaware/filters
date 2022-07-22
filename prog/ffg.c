@@ -32,14 +32,15 @@
 #define O_M_IC 4
 #include <io.h>
 #else
+#include <unistd.h>
 #define O_M_IC 0
 #endif
 #include "../common/h/args.h"
 #include "../common/h/msdir.h"
+#include "../common/h/msera.h"
 #include "../common/h/eprintf.h"
 #include "../util/getline.h"
 #include "../util/grutil.h"
-
 
 #ifndef S_IREAD
 # define S_IREAD S_IRUSR
@@ -147,8 +148,8 @@ FILE * stdip;
 static void explain(void)
 
 {
-#if S_MSDOS == 0
-	const char help = 
+#if S_MSDOS == 0 || 1
+	const char help[] = 
 #include "helptxt.h"
 		;
 	fputsout(help);
@@ -285,11 +286,12 @@ static void fmt_cmd(
 	  incs[incix] += tl;
 	else if (e_fmt[ix][fix+1] == 'b')
 	{ int tl_;
-	  char * beny = malloc(1000);
+	  Int sl = strlen(eny+tl);
+	  char * beny = malloc(eny);
 	  strcpy(beny, &eny[tl]);
 	  incs[incix] = beny;
 	  frees[incix] = 1;
-	  for (tl_ = strlen(beny); --tl_ >= 0; )
+	  for (tl_ = sl; --tl_ >= 0; )
 	    if (beny[tl_] == '.')
 	      beny[tl_] = 0;
 	}
@@ -432,7 +434,8 @@ static void doit(
     }
   }
   
-{ Vint occ_ct = 0;
+{ Vint leny_ = strlen(eny);
+	Vint occ_ct = 0;
   Cc cc = OK;
 
   if (is_diry)
@@ -443,8 +446,7 @@ static void doit(
     file_tot_sz_k += file_tot_sz_lo >> 10;
     file_tot_sz_lo &= 0x3ff;
     if (cmp_dir != null)
-    { Vint leny_ = strlen(eny);
-      Vint leny;
+    { Vint leny;
       for (leny = -1; (ch = eny[++leny]) != 0 &&
 		       ch == diry[leny]; )
         ;
@@ -463,16 +465,16 @@ static void doit(
       { strcpy(&cmp_file[0], cmp_dir);
         ch = cmp_file[cmp_dirl_-1];
         if (ch != '/' &&
-	    ch != '\\' &&
-	    ch != ':')
-	  cmp_file[cmp_dirl_++] = sep_ch;
+				    ch != '\\' &&
+				    ch != ':')
+				  cmp_file[cmp_dirl_++] = sep_ch;
         strcpy(&cmp_file[cmp_dirl_], &eny[leny]);
 #if 0
         eprintf((char*)stderr, "Comparing %s %s\n", sheny, cmp_file);
 #endif
 #if 0
         if (strlen(cmp_file) >= tln)
-	  fputserr("INT Err");
+				  fputserr("INT Err");
 #endif
       { extern Cc same_files(char *, char *, Vint);
         Cc dc = same_files(eny, cmp_file, verb_comp);
@@ -536,7 +538,7 @@ static void doit(
       else
       { char blank[31];
         char filename[132];
-        strcpy(filename,sheny);
+        strpcpy(filename,sheny, sizeof(filename));
         if (g_one_suff)
         { cc = strlen(filename);
           while (--cc > 0 && filename[cc] != '.')
@@ -626,8 +628,10 @@ static void doit(
     else
     { if (! at_opt && (msd_attrs & MSD_POST))
       { /*eprintf(null, "Pend %s %x\n", eny, msd_attrs);*/
-        pending_delete = ! g_filter;
-				strcpy(&cmd_line[0], eny);
+        if (leny_ < sizeof(cmd_line))
+				{	strcpy(&cmd_line[0], eny);
+        	pending_delete = ! g_filter;
+        }
       }
       else
       { if (v_opt) 
@@ -860,8 +864,8 @@ static void process_args()
 								   }
 								   e_fmt_kind[e_fmt_ix] = ch;
 								   e_fmt[e_fmt_ix++] = get_ee(true);
-//							   if (ch == 'e')
-//							     msd_simple |= MSD_NOCHD;
+								   if (ch == 'e')
+								     msd_simple |= MSD_NOCHD;
 								   if (s[1] != ch && (s[1] == 'e' || s[1] == 'p'))
 								   { e_fmt_kind[e_fmt_ix] = s[1];
 								     e_fmt[e_fmt_ix] = strdup(e_fmt[e_fmt_ix-1]);

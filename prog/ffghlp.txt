@@ -30,4 +30,4 @@ SELECTION CONDITIONS and'd:
    +{n}/{rahs}  -- and {not} properties set
    +{n}(gG) pat -- and {not} contains pattern (<double quote> must be escaped)
 where a leading -g may be omitted and -//pat is equivalent to -/ *pat
- try: fd pat -\ -//.cpp -e 'type %s'
+ try: fd pat -\\ -//.cpp -e 'type %s'

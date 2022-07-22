@@ -24,7 +24,7 @@ ffg.o: ../ffg.c
 
 FFGOBJS=args.o strutil.o re.o msdir.o msera.o ssprintf.o diffs.o getline.o tad.o flook.o fip.o grutil.o
 ffg: ../ffg.c $(FFGOBJS)
-	sed -e 's/^/"/' -e 's/$$/"/' ../ffghlp.txt > helptxt.h
+	sed -e 's/^/"/' -e 's?$$?\\n"?' ../ffghlp.txt > helptxt.h
 	$(CC) $(CFLAGS) $(LFLAGS) -o ffg ../ffg.c $(FFGOBJS)
 
 hello: ../hello.c
