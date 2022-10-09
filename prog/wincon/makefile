@@ -236,7 +236,7 @@ pm.exe: ../../pm.c msdir.obj
 	$(CC) $(CFLAGS) -I.. -o pm.exe ../../pm.c msdir.obj
 
 sumup.exe: sumup.obj
-	$(LINK32) $(LFLAGS) sumup.obj $(LIBS)
+	$(LK) $(LFLAGS) sumup.obj $(LIBS)
 
 sct_offs.exe: sct_offs.obj
 	$(LK) $(LFLAGS) /ST:1200 sct_offs, sct_offs, , ;
@@ -248,7 +248,7 @@ dirorg.exe: dirorg.obj
 	$(LK) $(LFLAGS) /ST:1200  dirorg, dirorg, , ;
 
 bin2hex.exe: bin2hex.obj
-	$(LINK32) $(LFLAGS) bin2hex.obj $(LIBS)
+	$(LK) $(LFLAGS) bin2hex.obj $(LIBS)
 
 dumpdisk.exe: dumpdisk.obj
 	$(LK) $(LFLAGS) /ST:1200  dumpdisk, dumpdisk, , ;
@@ -257,7 +257,7 @@ tail.exe: tail.obj
 	$(LK) $(LFLAGS) /ST:1200  tail, tail, , ;
 
 hex2bin.exe: hex2bin.obj
-	$(LK) $(LFLAGS) /ST:1200  hex2bin, hex2bin, , ;
+	$(LK) $(LFLAGS) hex2bin.obj $(LIBS)
 
 invtags.exe: invtags.obj msdir.obj strutil.obj
 	$(CC) -o invtags invtags.obj msdir.obj strutil.obj
@@ -293,7 +293,7 @@ svncone.exe: svncone.obj
 	$(CC) svncone.obj
 
 uniq.exe: uniq.obj msdir.obj
-	$(LINK32) $(LFLAGS) uniq.obj msdir.obj $(LIBS)
+	$(LK) $(LFLAGS) uniq.obj msdir.obj $(LIBS)
 
 spread.exe: spread.obj sprint3.obj
 	$(LK) /B /ST:1400 $(LFLAGS) spread.obj sprint3.obj $(LIBS)

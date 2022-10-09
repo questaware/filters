@@ -12,12 +12,13 @@ extern Int atol();
 
 static void explain()
 
-{ puts("bin2hex {-c} {-2} {-w} {-f offs} {-p pattern } filename\n"
+{ puts("bin2hex {-c} {-1} {-2} {-w} {-f offs} {-p pattern } filename\n"
+                  "  -1      Omit spaces\n"
+                  "  -2      Swap bytes\n"
                   "  -c      Output in ascii\n"
                   "  -f offs From offset\n"
                   "  -h      output offsets\n"
                   "  -p pat  Not implemented\n"
-                  "  -2      Swap bytes\n"
                   "  -w      Wide display\n"
                   "  -C      Exclude hex display, include ascii\n"
       );  
@@ -38,6 +39,7 @@ main(argc, argv)
   Bool asc_opt = false;
   Bool hdr_opt = false;
   Bool terse = false;
+  Bool nosp = false;
   Vint argsleft;
   Char ** argv_ = &argv[1];
   for (argsleft = argc; --argsleft > 0; )
@@ -49,6 +51,8 @@ main(argc, argv)
     { switch (*s)
       { case '2':
           swap = 2;
+				when '1':
+					nosp = true;
         when 'w':
           bytewidth = 31;
         when 'C':
@@ -119,29 +123,29 @@ main(argc, argv)
 
     if (state >= 2)
     { 
-      if (not terse)
-	if	(swap == 2)
-	{ putchar(hexchars[(val >> 12) & 0xf]);
-	  putchar(hexchars[(val >>  8) & 0xf]);
-	  putchar(hexchars[(val >>  4) & 0xf]);
-	  putchar(hexchars[(val >>  0) & 0xf]);
-	}
-	else if (swap == 0)
-	{ putchar(hexchars[(val >>  4) & 0xf]);
-	  putchar(hexchars[(val >>  0) & 0xf]);
-	  putchar(hexchars[(val >> 12) & 0xf]);
-	  putchar(hexchars[(val >>  8) & 0xf]);
-	}
+      if (! terse)
+				if	(swap == 2)
+				{ putchar(hexchars[(val >> 12) & 0xf]);
+				  putchar(hexchars[(val >>  8) & 0xf]);
+				  putchar(hexchars[(val >>  4) & 0xf]);
+				  putchar(hexchars[(val >>  0) & 0xf]);
+				}
+				else if (swap == 0)
+				{ putchar(hexchars[(val >>  4) & 0xf]);
+				  putchar(hexchars[(val >>  0) & 0xf]);
+				  putchar(hexchars[(val >> 12) & 0xf]);
+				  putchar(hexchars[(val >>  8) & 0xf]);
+				}
       if      (bytewidth == 31 and (ct & 2))
         ;
       else if (ct & bytewidth)
-      { if (not terse)
+      { if (! terse && ! nosp)
           putchar(' ');
       }
       else
       { if (asc_opt)
         {
-          if (not terse)
+          if (! terse && ! nosp)
             putchar(' ');
           for (val = -1; ++val <= bytewidth; )
           { if (buff[val] < ' ')

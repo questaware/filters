@@ -42,7 +42,7 @@ static char label[MAXLN];
   Bool x_opt = false;
   int  nest_lvl = 0;
 
-private void explain()
+static void explain()
 
 { fprintf(stderr, 
 			"invtags filename*\n"
@@ -57,11 +57,11 @@ private void explain()
 			"   -v -- verbose\n"
 			"   -x -- include externs\n"
 			"   -@ -- use list of files\n"
-                        "   -# -- find them nested in # braces (DEFAULT 0)\n"
+			"   -# -- find them nested in # braces (DEFAULT 0)\n"
 			"No a-z is similar to -r\n");
 }
 
-private void do_it(eny, chan)
+static void do_it(eny, chan)
 	Char * eny;
 	FILE * chan;
 { Char * format = s_opt ? "%s\n" 	  :
@@ -302,7 +302,7 @@ static FILE * user_open_read(fn)
 }
 
 
-private Cc do_all(chan)
+static Cc do_all(chan)
 	 FILE *  chan;
 { Char * ln = fgets(&fnline[0], FILENAMESZ, chan);
   if (ln == null)

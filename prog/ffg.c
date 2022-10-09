@@ -1101,12 +1101,14 @@ int main(
   stdip = stdin;
   tzset();
 
-  set_args(argc, argv, stdin);
   if (strcmp(argv[argc-1], "-v") == 0)
 		v_opt = 1;
-
-  if (strcmp(argv[argc-1], "-V") == 0)
+  else if (strcmp(argv[argc-1], "-V") == 0)
 		vv_opt = 1;
+	else
+		++argc;
+
+  set_args(argc-1, argv, stdin);
 
   process_args();
 

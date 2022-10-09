@@ -1,5 +1,5 @@
 
-stree -q . | sort > \temp\pjsgot
+ff -q . | sort > \temp\pjsgot
 type index | stree -@@ | sort > \temp\pjswant
 
 diff \temp\pjswant \temp\pjsgot > \temp\chkindex.out

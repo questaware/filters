@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include "build.h"
 
-#include "../util/h/machstk.h"
+#include "../util/machstk.h"
 
 
 struct Sct
@@ -20,7 +20,7 @@ struct Sct *  psct[5];
 #define d(i) ((int)psct[i] + 24)
 #define e(i) rastk[i]
 
-
+#if 0
 
 void my_debugf(char *Format_cp, ...)
 
@@ -111,12 +111,20 @@ pc(int c)
   my_debugf("< pc");
 }
 
+#endif
 
 main()
 
+{ int cix;
+  for (cix = (int)'0'; ++cix < 256; )
+  { printf("char %x %c.\n", cix, (char)cix);
+	}
+#if 0
 { struct Sct pm_s;   psct[3] = &pm_s;
   rastk[3] = (Byte*)main;
   my_debugf("main begin");
   mstk_dump_calls("main");
   pc(0x12345678);
+}
+#endif
 }
