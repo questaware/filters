@@ -25,7 +25,7 @@
 #include <io.h>
 #endif
 
-#include "strutil.h"
+#include "../util/strutil.h"
 
 #if 1
 extern char * getcwd();

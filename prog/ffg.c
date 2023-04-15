@@ -181,6 +181,46 @@ void myexit(int n)
 #endif
   exit(n);
 }
+
+void eprintdet()
+
+{ extern struct tm time_dcr;    /* from tad.c */
+	#if S_MSDOS
+			  if (at_opt)
+				{ struct tm * res = gmtime(&msd_stat.st_mtime);
+				  if (res != 0)
+				    memcpy(&time_dcr, res, sizeof (struct tm));
+				}
+				else
+					(void)tad_to_asc(msd_stat.st_mtime);
+	#else
+			{ struct tm * res = localtime(&msd_stat.st_mtime);
+			  if (res != 0)
+	    		memcpy(&time_dcr, res, sizeof (struct tm));
+			}
+	#endif
+				eprintf(null, "%02d/%02d/%02d %2d:%02d ",
+				       (short)time_dcr.tm_year %100,
+			  	     (short)time_dcr.tm_mon+1,
+			    	   (short)time_dcr.tm_mday,
+			      	 (short)time_dcr.tm_hour,
+			      	 (short)time_dcr.tm_min,
+			       	 (short)time_dcr.tm_sec
+	       			);
+/*	    eprintf(null, "%ld ", msd_stat.st_mtime); */
+
+				if (long_opt > 1)
+#if S_MSDOS
+					eprintf(null, "%c%c%c%c ",
+						       msd_attrs & MSD_ROFILE  ? ' ' : 'w',
+						       msd_attrs & MSD_CHGD    ? 'a' : ' ',
+						       msd_attrs & MSD_HIDFILE ? 'h' : ' ',
+						       msd_attrs & MSD_SYSFILE ? 's' : ' '
+						     );
+#else
+					eprintf(null, "%3o ", msd_stat.st_mode & 0777);
+#endif
+}
 
 static Cc mygets0(Char * tgt_, Vint maxlen)
 
@@ -677,45 +717,11 @@ static void doit(
 #endif
 				}
 		  }
+      #undef ch
     }
     else
     { if (long_opt != 0)
-      { extern struct tm time_dcr;    /* from tad.c */
-	#if S_MSDOS
-			  if (at_opt)
-				{ struct tm * res = gmtime(&msd_stat.st_mtime);
-				  if (res != 0)
-				    memcpy(&time_dcr, res, sizeof (struct tm));
-				}
-				else
-					(void)tad_to_asc(msd_stat.st_mtime);
-	#else
-			{ struct tm * res = localtime(&msd_stat.st_mtime);
-			  if (res != 0)
-	    		memcpy(&time_dcr, res, sizeof (struct tm));
-			}
-	#endif
-				eprintf(null, "%02d/%02d/%02d %2d:%02d ",
-				       (short)time_dcr.tm_year %100,
-			  	     (short)time_dcr.tm_mon+1,
-			    	   (short)time_dcr.tm_mday,
-			      	 (short)time_dcr.tm_hour,
-			      	 (short)time_dcr.tm_min,
-			       	 (short)time_dcr.tm_sec
-	       			);
-/*	    eprintf(null, "%ld ", msd_stat.st_mtime); */
-
-				if (long_opt > 1)
-#if S_MSDOS
-					eprintf(null, "%c%c%c%c ",
-						       msd_attrs & MSD_ROFILE  ? ' ' : 'w',
-						       msd_attrs & MSD_CHGD    ? 'a' : ' ',
-						       msd_attrs & MSD_HIDFILE ? 'h' : ' ',
-						       msd_attrs & MSD_SYSFILE ? 's' : ' '
-						     );
-#else
-					eprintf(null, "%3o ", msd_stat.st_mode & 0777);
-#endif
+      {	eprintdet();
 				fputsout(sheny);
 	    }
       else if (gr_pat == null || ! v_opt)
@@ -774,9 +780,9 @@ Char * get_ee(Bool alloc)
 
 static void process_args()
 
-{      Vint echo = 0;
-  fast Char ch;
-       Char * s;
+{ Vint echo = 0;
+  Char ch;
+  Char * s;
 
   while ((s = get_ee(false)) != null)
   { if (echo)
@@ -1123,10 +1129,10 @@ int main(
   for (ix = 0; ; ++ix)
   { Char * eny;
     Char * fn;
+    Cc cc = OK;
 
     if (at_opt)
-    { struct stat fstat_;
-      memset(&msd_stat, 0, sizeof(msd_stat));
+    { memset(&msd_stat, 0, sizeof(msd_stat));
 
       if (mygets0(&fnbuff[0], sizeof(fnbuff)-1) != OK)
 				break;
@@ -1137,21 +1143,8 @@ int main(
       if (eny[0] == 0)
         continue;
       if (at_opt == 1)
-      { ch = stat(fnbuff, &fstat_);
-        if (ch != OK)
-        { eprintf((char*)stderr, "File not found %s (%x)\n", eny, ch);
-				  continue;
-				} 
-        msd_stat.st_size =  fstat_.st_size;
-        msd_stat.st_mtime = fstat_.st_mtime;
-#if S_MSDOS
-        msd_attrs = msd_getprops(eny);
-#else
-        msd_attrs =((fstat_.st_mode & S_IFMT) == S_IFDIR ? MSD_DIRY   :
-		    (fstat_.st_mode & S_IREAD) != 0      ? MSD_ROFILE : 0) | 
-		    /* crude!*/
-				     (eny[0] == '.' ? MSD_HIDFILE : 0);
-#endif
+      {	cc = EDENIED;
+      	fn = fnbuff;
       }
     }
     else
@@ -1168,12 +1161,38 @@ int main(
         explain();
         
     /*eprintf(null, "Filling %s\n", fn);*/
-      msd_init(fn, "",
-               MSD_DIRY | MSD_AUTO | MSD_POST |
-					    (props[IX_OR] | props[IX_AND])&(MSD_HIDFILE+MSD_SYSFILE) |
-							 msd_simple
-				      );
+      cc = msd_init(fn, "",
+           					MSD_DIRY | MSD_AUTO | MSD_POST |
+									  (props[IX_OR] | props[IX_AND])&(MSD_HIDFILE+MSD_SYSFILE) |
+										 msd_simple
+							      );
     }
+    
+		if (cc != OK)
+    { struct stat fstat_;
+    	cc = stat(fn, &fstat_);
+      if (cc != OK)
+      { eprintf((char*)stderr, "File not found %s (%x)\n", fn, cc);
+			  continue;
+			} 
+      msd_stat.st_size =  fstat_.st_size;
+      msd_stat.st_mtime = fstat_.st_mtime;
+#if S_MSDOS
+      msd_attrs = msd_getprops(fn);
+#else
+      msd_attrs =((fstat_.st_mode & S_IFMT) == S_IFDIR ? MSD_DIRY   :
+		  						(fstat_.st_mode & S_IREAD) != 0      ? MSD_ROFILE : 0) | 
+		    /* crude!*/
+						     (eny[0] == '.' ? MSD_HIDFILE : 0);
+#endif
+			if (!at_opt)
+	    {	eprintf(null,"%s %d  ",fn, msd_stat.st_size);
+      	eprintdet();
+      	eprintf(null, "\n");
+				continue;
+			}
+		}
+
   /*printf("Got file %s %s\n", fn, eny);*/
 
 		if (a_opt && gr_first != NULL)
