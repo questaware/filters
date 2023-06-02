@@ -271,6 +271,8 @@ staticc Set16   msd_props;		/* which files to use */
 #if NOPUSHPOP == 0
 
 #define MAX_TREE 18
+
+ int g_max_tree = 18;
 					/* preincrement with 0 unoccupied */
 
 staticc Short msd_lenstk[MAX_TREE+1];		/* stack of filename lengths */
@@ -361,12 +363,13 @@ Cc msd_push()
 { if (msd_cc != OK)
     return msd_cc;
   ++msd_ix;
-  if (msd_ix >= MAX_TREE)
+  if (msd_ix >= MAX_TREE || msd_ix > g_max_tree)
   { --msd_ix;
 #if S_MSDOS == 0
     closedir(msd_stk[msd_ix]);
 #endif
   /*eprintf(null, "NESTED_MORE_THAN_%d:_FILES_OMITTED", MAX_TREE);*/
+  	return NOT_FOUND;
   }
   msd_lenstk[msd_ix] = strlen(msd_path);
 /*eprintf(null, "LENSTK (%d) = %d\n", msd_ix, msd_lenstk[msd_ix]);*/
@@ -858,10 +861,10 @@ static Bool extract_fn(int * fnoffs)
 #else
   msd_a = !(msd_sct.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 0 : MSD_DIRY;
 #endif
-  if (msd_a & MSD_DIRY)
-  { tl[0] = '/';
-    tl[1] = 0;
-  }
+//if (msd_a & MSD_DIRY)
+//{ tl[0] = '/';
+//  tl[1] = 0;
+//}
 
 /*eprintf(null, "doFatDate\n");*/
 
@@ -870,11 +873,11 @@ static Bool extract_fn(int * fnoffs)
   msd_stat.st_mtime = ((Int)fat_date << 16) + (fat_time & 0xffff);
 #elif S_MSDOS
   msd_a =  dta[0x15] & 0x3f;
-  if (msd_a & MSD_DIRY)
-  { 
-    tl[0] = '/';
-    tl[1] = 0;
-  }
+//if (msd_a & MSD_DIRY)
+//{ 
+//  tl[0] = '/';
+//  tl[1] = 0;
+//}
 
   msd_stat.st_size  = *(Int*)&dta[0x1a];
   msd_stat.st_mtime = *(Int*)&dta[0x16];

@@ -1,4 +1,4 @@
-ffg { options } { directory }* { -v }          Version 1.06
+ffg { options } { directory }* { -v }          Version 1.07
    -\\         -- Use \\ as separator
    -f          -- read these options from stdin
    @v          -- read these options from environment variable v
@@ -25,6 +25,7 @@ SELECTION CONDITIONS or'd:
    -{n}{gG} pat -- {not} Grep for pattern, G:ignore case, space after {gG}:word
    -s {-}size   -- Greater{/Less} than size, (try -#s 1)
    -m{b} date   -- New{/Old}er:{{{yy}yy{/}mm{m}{/}dd}{/{hh:mm:ss}}|now|today}
+   -j           -- Follow Junctions
 SELECTION CONDITIONS and'd:
    +n/{u} rexp  -- and not match file
    +{n}/{rahs}  -- and {not} properties set

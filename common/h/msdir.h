@@ -42,6 +42,7 @@ extern struct stat msd_stat;
 #define MSD_NOPERM   64
 #define MSD_MATCHED 128
 #define MSD_SLINK   256
+#define MSD_JUNC	 1024
 
 #define MSD_INTERNAL 256
 #define MSD_SIMPLE   512

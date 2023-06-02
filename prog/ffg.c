@@ -92,6 +92,7 @@ typedef struct Patcell_s
   Char * at_fn = NULL;
   Bool i_opt = false;
   Bool d_opt = false;
+  Bool j_opt = false;		/* follow junctions */
   Bool nosl_opt = false;
   Bool q_opt = false;
   Bool qq_opt = false;
@@ -102,7 +103,6 @@ typedef struct Patcell_s
   Bool ct_opt = false;
   Short prepost_opts = 0;
   Bool fn_or = false;		/* logical or of filename patterns */
-  Vint rec_clamp = 100;
   Char	 e_fmt_kind[NO_FMT];
   Char * e_fmt[NO_FMT] = { "" };
   Short e_fmt_ix = 0;
@@ -828,6 +828,7 @@ static void process_args()
 								     s += strlen(s) - 1;
 								   }
 				when 'a':  a_opt = true;
+				when 'j':  j_opt = true;
 				when 'n':  negprops = M_NOT;
 				when 'f':{ Vint sargc = argc_;
 								   Vint sargix = argix_;
@@ -1066,7 +1067,9 @@ static void process_args()
 								   { eprintf(null, ">%s<\n", s);
 								     explain();
 								   }
-								   rec_clamp = ch-'0';
+								 { extern int g_max_tree;
+								   g_max_tree = ch-'0';
+								 }
 			}
     }
   }}
@@ -1214,9 +1217,9 @@ int main(
 				if (eny == null)
 				  break;
       }
-
-      if (msd_attrs & MSD_POST)
-				++rec_clamp;
+      
+      if (!j_opt && (msd_attrs & MSD_JUNC))
+      	continue;
 
     { Set16 is_diry = msd_attrs & (MSD_DIRY+MSD_POST);
     /*eprintf(null, "ATTS %s %d %x\n", eny, fnoffs, msd_attrs);*/
@@ -1233,14 +1236,13 @@ int main(
 				  doit(pset, fn, eny, dirl);
         if ((msd_attrs & MSD_DIRY & pset) && 
 				    (u_opt || !msd_isslink())  &&
-	    			rec_clamp > 0 && (~msd_attrs & MSD_POST))
+	    	    (~msd_attrs & MSD_POST))
         { 
         /*eprintf(null, "MSDP(RPT) %s\n", eny);*/
 				  if (msd_push() == EDENIED && vv_opt)
 				  { char cwdb[160];
 	    			eprintf((char*)stderr,"Cannot open %s (CWD %s)\n",eny,getcwd(cwdb,159));
 				  }
-				  --rec_clamp;
         }
       }
 
