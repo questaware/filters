@@ -35,35 +35,35 @@ void main (argc,argv)
     for (flgs = &argv_[0][1]; *flgs != 0; ++flgs)
       if      (*flgs == 'w')
       { if (in_range(flgs[1], '0', '9'))
-	  tabsz = atoi(&flgs[1]);
-	else if (argsleft > 0)
-	{ --argsleft;
-	  if (argsleft <= 0)
-	    explain();
+				  tabsz = atoi(&flgs[1]);
+				else if (argsleft > 0)
+				{ --argsleft;
+				  if (argsleft <= 0)
+				    explain();
 
-	  tabsz = atoi(*++argv_);
-	}
+				  tabsz = atoi(*++argv_);
+				}
       }
       else if (*flgs == 'W')
       { if (in_range(flgs[1], '0', '9'))
-	  tabsz0 = atoi(&flgs[1]);
-	else if (argsleft > 0)
-	{ --argsleft;
-	  if (argsleft <= 0)
-	    explain();
+				  tabsz0 = atoi(&flgs[1]);
+				else if (argsleft > 0)
+				{ --argsleft;
+				  if (argsleft <= 0)
+				    explain();
 
-	  tabsz0 = atoi(*++argv_);
-	}
+				  tabsz0 = atoi(*++argv_);
+				}
       }
       else if (*flgs == 'l')
       { if (in_range(flgs[1], '0', '9'))
-	  pagelen = atoi(&flgs[1]);
-	else if (argsleft > 0)
-	{ --argsleft;
-	  if (argsleft <= 0)
-	    explain();
-	  pagelen = atoi(*++argv_);
-	}
+				  pagelen = atoi(&flgs[1]);
+				else if (argsleft > 0)
+				{ --argsleft;
+				  if (argsleft <= 0)
+				    explain();
+				  pagelen = atoi(*++argv_);
+				}
       }
       else
         explain();
@@ -88,7 +88,7 @@ void main (argc,argv)
                 
       if (ch == '\n')
       { lineix = 0;
-	linect += 1;
+				linect += 1;
       }
       if      (ch == '\t')
       { putchar(' ');
@@ -101,8 +101,8 @@ void main (argc,argv)
       }
       else if (ch == VT)
       { while (++linect <= pagelen)
-	  putchar('\n');
-	linect = 0;
+				  putchar('\n');
+				linect = 0;
       }                   	   
       else 
         putchar(ch);

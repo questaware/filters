@@ -77,6 +77,9 @@ cleangraph.exe: ../../cleangraph.cpp
 cleanfort.exe: ../../cleanfort.cpp
 	$(CC) $(CFLAGS) -GX -I.. -o cleanfort.exe ../../cleanfort.cpp
 
+head.exe: ../../head.c
+	$(CC) $(CFLAGS) -I.. -o head.exe ../../head.c
+
 lbltofile.exe: ../../lbltofile.cpp
 	$(CC) $(CFLAGS) -GX -I.. -o lbltofile.exe ../../lbltofile.cpp
 
@@ -201,6 +204,12 @@ fromby.obj: ../../fromby.c
 fromby.exe: fromby.obj
 	$(LK) $(LFLAGS) /STACK:1200 fromby.obj
 
+toupper.obj: ../../toupper.c
+	$(CC) $(CFLAGS) -I.. -c ../../toupper.c
+
+toupper.exe: toupper.obj msdir.obj msera.obj
+	$(LK) $(LFLAGS) /STACK:1200 toupper.obj msdir.obj msera.obj
+
 touch.obj: ../../touch.c
 	$(CC) $(CFLAGS) -I.. -c ../../touch.c
 
@@ -232,7 +241,13 @@ unlink.obj: ../../unlink.c
 	$(CC) $(CFLAGS) -I.. -c ../../unlink.c
 
 unlink.exe: unlink.obj
-	$(LK) $(LFLAGS) /STACK:1200  unlink, unlink, , ;
+	$(LINK) $(LFLAGS) unlink.obj $(LIBS)
+
+rm.obj: ../../rm.c
+	$(CC) $(CFLAGS) -I.. -c ../../rm.c
+
+rm.exe: rm.obj
+	$(LK) $(LFLAGS) rm.obj $(LIBS)
 
 dirorg.obj: ../../dirorg.c
 	$(CC) $(CFLAGS) -I.. -c ../../dirorg.c

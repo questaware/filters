@@ -4,9 +4,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "build.h"
-
-
 
 main(argc, argv)
     int argc;
