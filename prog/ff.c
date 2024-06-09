@@ -168,13 +168,14 @@ static void explain(void)
     if (afn == null)
       fputsout(helpfn);
     else
+    {	printf("File is %s\n", afn);
     { int ip = open(afn, O_RDONLY);
       if (ip > 0)
       { Vint ct;
 				while ((ct = read(ip, &cmd_line[0], sizeof(cmd_line))) > 0)
 				  write(1, cmd_line, ct);
       }
-    }
+    }}
 }
 #endif
   exit(0);

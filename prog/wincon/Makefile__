@@ -48,7 +48,7 @@ CC = cl
 F90=ifort
 LK=link
 
-all: ll.exe
+all: ff.exe
 
 bind:
 	$(CC) /?
@@ -387,11 +387,11 @@ popen.obj: ../../popen.cpp
 popen.exe: popen.obj
 	link $(LFLAGS) popen.obj
 
-ll.obj: ../../ll.c
-	$(CC) $(CFLAGS) -I.. -oll.obj -c ../../ll.c
+ff.obj: ../../ff.c
+	$(CC) $(CFLAGS) -I.. -off.obj -c ../../ff.c
 
-ll.i: ../../ll.c
-	$(CC) $(CFLAGS) -I.. -E ../../ll.c
+ff.i: ../../ff.c
+	$(CC) $(CFLAGS) -I.. -E ../../ff.c
 
 strutil.obj: ../../../util/strutil.c
 	$(CC) $(CFLAGS) -ostrutil.obj -I.. -c ../../../util/strutil.c
@@ -446,9 +446,9 @@ flook.obj: ../../../common/flook.c
 
 SOBJS = args.obj strutil.obj re.obj msdir.obj msexec.obj msera.obj ssprintf.obj diffs.obj getline.obj flook.obj tad.obj fip.obj grutil.obj
 
-ll.exe: ll.obj strutil.obj args.obj re.obj msdir.obj msexec.obj msera.obj ssprintf.obj diffs.obj getline.obj tad.obj flook.obj fip.obj grutil.obj
-#	$(CC) -GX -I.. -o ll.exe ../../ll.c $(SOBJS) $(LIBS)
-	$(LK) $(LFLAGS) ll.obj $(SOBJS) $(LIBS)
+ff.exe: ff.obj strutil.obj args.obj re.obj msdir.obj msexec.obj msera.obj ssprintf.obj diffs.obj getline.obj tad.obj flook.obj fip.obj grutil.obj
+#	$(CC) -GX -I.. -o ff.exe ../../ff.c $(SOBJS) $(LIBS)
+	$(LK) $(LFLAGS) ff.obj $(SOBJS) $(LIBS)
 
 docrypt.obj: ../../docrypt.c
 	$(CC) $(CFLAGS) -I.. -c ../../docrypt.c

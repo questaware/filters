@@ -1,4 +1,4 @@
-ll { options } { directory }*                 Version 1.06
+ff { options } { directory }*                 Version 1.06
          -\\       -- Use \\ as separator
          -f        -- read these options from stdin
          @v        -- read these options from environment variable v
@@ -30,4 +30,4 @@ SELECTION CONDITIONS and'd:
         +{n}/{rahs}  -- and {not} properties set
         +{n}(gG) pat -- and {not} contains pattern (" must be escaped)
  where a leading -g may be omitted and //pat is equivalent to -/ *pat
- try: ll pat -\ -//.cpp -e "type %s"
+ try: ff pat -\ -//.cpp -e "type %s"
