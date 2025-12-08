@@ -114,6 +114,9 @@ dice.exe: ../../dice.c
 crumple.exe: ../../crumple.c
 	$(CC) $(CFLAGS) -I.. -o crumple.exe ../../crumple.c
 
+clipboard.exe: ../../clipboard.c
+	$(CC) $(CFLAGS) -I.. -o clipboard.exe ../../clipboard.c winmm.lib kernel32.lib user32.lib
+
 colsel.exe: ../../colsel.c
 	$(CC) $(CFLAGS) -I.. -o colsel.exe ../../colsel.c
 
