@@ -17,7 +17,7 @@ main(argc, argv)
   } 
   
 { char * fn = argv[1];
-  FILE * ip = fopen(fn, "r");
+  FILE * ip = fn[0] == '-' && fn[1] == 0 ? stdin : fopen(fn, "r");
   if (ip == NULL)
   { fprintf(stderr, "cannot open i/p %s", fn);
     exit(-1);
@@ -36,11 +36,11 @@ main(argc, argv)
       static char shft_[] = {12,8,4,0};
 
       if      ((unsigned)(ch-'0')<=9)
-	ch -= '0';
+				ch -= '0';
       else if (ch >= 'A' && ch <= 'F')
-	ch -= 'A' - 10;
+				ch -= 'A' - 10;
       else if (ch >= 'a' && ch <= 'f')
-	ch -= 'a' - 10;
+				ch -= 'a' - 10;
 
       val += (short)ch << (swap ? shft [state]
 	                        : shft_[state]);
